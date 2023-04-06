@@ -1,0 +1,11 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: springboot
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://47.120.10.89:3306/springboot?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: "git_group"
+      password: "123456"
