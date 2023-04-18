@@ -10,6 +10,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,8 +18,7 @@ import static com.minigit.util.Sha1Utils.calculateDirSha1;
 import static com.minigit.util.Sha1Utils.calculateFileSha1;
 
 public class CommitUtils {
-    public static String calculateCommitHash(Commit commit) throws NoSuchAlgorithmException {
-        String data = commit.getMessage() + commit.getCommitter() + commit.getCommitTime() + commit.getParentHash();
+    public static String calculateCommitHash(String data) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
         // byte是0-255的整数
         byte[] hashBytes = digest.digest(data.getBytes(StandardCharsets.UTF_8));
@@ -29,23 +29,38 @@ public class CommitUtils {
         return hashBuilder.toString();
     }
 
-    public static Commit createCommit(String message, String committer, String parentHash) throws NoSuchAlgorithmException {
-        // 创建一个新的提交对象
-        Commit commit = new Commit();
-        commit.setMessage(message);
-        commit.setCommitter(committer);
-        commit.setCommitTime(LocalDateTime.now());
-        commit.setParentHash(parentHash);
-        String hash = calculateCommitHash(commit);
-        commit.setHash(hash);
+    public static void commit(String message, String committer) throws NoSuchAlgorithmException {
+        String parentCommitHash = FileUtils.getParentHash();
+        String oldTreeHeadHash = FileUtils.getTreeHeadHash();
+        Map<String, String> fileMap = new HashMap<>();
+        Map<String, String> indexMap = new HashMap<>();
+        Map<String, String> commitTreeMap = new HashMap<>();
+        createIndexTree(indexMap);
+        createOldCommitTree(oldTreeHeadHash, commitTreeMap);
+        createFileTree(fileMap);
+        getCommitTree(commitTreeMap, fileMap, indexMap);
 
+        String newTreeHeadHash = writeTree(new File(GitUtils.originDir), commitTreeMap);
         // 将新的提交写入objects文件，并清空index
-        String commitHash = getHeadHash();
-        if(commitHash == null) return null;
-        String folder = hash.substring(0,2);
-        String filename = hash.substring(2);
-        String filePath = GitUtils.objectDir + File.separator + folder + File.separator + filename;
-        File objectFile = new File(filePath);
+        StringBuilder sb = new StringBuilder();
+        LocalDateTime dateTime;
+        // 这里应该再有一个提交时间
+        String data = sb.append(newTreeHeadHash + "\n")
+                .append(committer + "\t" + "2020-4-18 00:00:00 \n")
+                .append(parentCommitHash + "\n")
+                .append(message).toString();
+        String commitHash = calculateCommitHash(data);
+        File file = FileUtils.createObjectFile(commitHash);
+        try {
+            FileUtils.writeFile(file.getAbsolutePath(), data);
+            // 将refs/head/main中的commitHash替换为最新的hash
+            FileUtils.writeFileNoAppend(GitUtils.minigitDir + File.separator +
+                    FileUtils.readLine(GitUtils.headPath),commitHash);
+            // 删除缓冲区的内容
+            FileUtils.deleteFileOrDirectory(GitUtils.indexPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (!objectFile.exists()) {
             File folderFile = new File(GitUtils.objectDir + File.separator + folder);
             folderFile.mkdirs();
@@ -54,11 +69,10 @@ public class CommitUtils {
                 FileUtils.writeFile(filePath, hash);
                 FileUtils.writeFile(filePath, committer + "\t" + commit.getCommitTime());
                 FileUtils.writeFile(filePath, message);
-                FileUtils.deleteFileOrDirectory(GitUtils.indexPath);
 
                 // 保存commit的信息
                 System.out.println(FileUtils.readFile(GitUtils.headPath));
-                FileUtils.writeFile(GitUtils.minigitDir + File.separator + FileUtils.readLine(GitUtils.headPath), hash);
+
             } catch (FileNotFoundException e) {
                 System.out.println("找不到文件!");
             } catch (IOException e) {
@@ -75,30 +89,17 @@ public class CommitUtils {
         return commit;
     }
 
-    public static String getHeadHash(){
-        try {
-            String content = FileUtils.readFile(GitUtils.indexPath);
-            String[] lines = content.split("\r?\n");
-            for (String line : lines) {
-                if(line.startsWith(GitUtils.originDir)){
-                    String hash = line.substring(line.indexOf("\t") + 1);
-                    return hash;
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println("INDEX文件中没有找到树根哈希");
-        return null;
-    }
 
     /**
-     * 创建commitTree，这是一个map，保存了所有blob文件的路径和哈希值
+     * 创建旧的commitTree，这是一个map，保存了所有blob文件的路径和哈希值
      * @param treeHeadHash 一定是根目录（originDir)
      * @throws IOException
      */
-    public static void createCommitTree(String treeHeadHash, Map<String,String> commitMap){
+    public static void createOldCommitTree(String treeHeadHash, Map<String,String> commitMap){
         try {
+            if(treeHeadHash == null){
+                return;
+            }
             File file = FileUtils.getObjectFile(treeHeadHash);
             String content = FileUtils.readFile(file.getAbsolutePath());
             if(!content.startsWith("bolb") && !content.startsWith("tree")){
@@ -112,7 +113,7 @@ public class CommitUtils {
                     commitMap.put(s[1],s[2]);
                 }
                 else {
-                    createCommitTree(s[2],commitMap);
+                    createOldCommitTree(s[2],commitMap);
                 }
             }
         } catch (IOException e) {
@@ -201,21 +202,22 @@ public class CommitUtils {
                 commitTreeMap.remove(path);
             }
         }
-        // 更新成功！！！！！！！！
+        // 更新成功！！！！！！！！,获得更新后的commitTreeMap
         return commitTreeMap;
     }
 
 
-    public static String writeTree(File file, Map<String,String> fileMap, Map<String,String> commitTreeMap) {
+    public static String writeTree(File file, Map<String,String> commitTreeMap) {
         List<TreeEntry> treeEntries = new ArrayList<>();
         String hash;
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 TreeEntry.EntryType entryType = child.isDirectory() ? TreeEntry.EntryType.tree : TreeEntry.EntryType.blob;
-                hash = writeTree(child, fileMap, commitTreeMap);
+                hash = writeTree(child, commitTreeMap);
                 treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
             }
             hash = calculateDirSha1(treeEntries);
+            // 在这里调用了writeObject方法，将文件写入object
             writeObject(treeEntries);
         } else if(file.isFile() && commitTreeMap.containsKey(file.getAbsolutePath())) {
             // 如果commitTreeMap中包含这个文件
@@ -225,8 +227,10 @@ public class CommitUtils {
         } else {
             hash = null;
         }
+        // 获得treeHeadHash
         return hash;
     }
+
 
 
     public static void writeObject(List<TreeEntry> treeEntries){
@@ -250,7 +254,6 @@ public class CommitUtils {
                     }
                 }
             }
-
         }
         // 计算tree文件的哈希值，写入objects
         String dirHash = calculateDirSha1(treeEntries);

@@ -1,8 +1,5 @@
 import com.minigit.MinigitApplication;
-import com.minigit.util.CommitUtils;
-import com.minigit.util.FileUtils;
-import com.minigit.util.GitUtils;
-import com.minigit.util.Sha1Utils;
+import com.minigit.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +36,13 @@ public class MinigitTest {
 
     @Test
     public void addTest() throws IOException {
+
+        GitUtils.init(DIR);
+        File file = new File(DIR + File.separator + "dir0" + File.separator + "p1.txt");
+        System.out.println(file.exists());
+        File[] files = new File[1];
+        files[0] = file;
+        AddUtils.addFile(files);
         /*GitUtils.init(DIR);
         File file = new File(DIR + File.separator + "dir0");
         List<File> files  = new ArrayList<>();
@@ -56,7 +60,6 @@ public class MinigitTest {
     @Test
     public void commitTest() throws NoSuchAlgorithmException, IOException {
         GitUtils.init(DIR);
-        CommitUtils.createCommit("m","zlji", null);
     }
 
 }

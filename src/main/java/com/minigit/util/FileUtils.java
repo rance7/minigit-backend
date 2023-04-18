@@ -26,13 +26,25 @@ public  class FileUtils {
     }
 
     /**
-     * 写入文件内容
+     * 写入文件内容（追加）
      * @param filePath 文件路径
      * @param content 内容字符串
      * @throws IOException
      */
     public static void writeFile(String filePath, String content) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(filePath,true));
+        writer.write(content + "\n");
+        writer.close();
+    }
+
+    /**
+     * 写入文件内容(覆盖）
+     * @param filePath 文件路径
+     * @param content 内容字符串
+     * @throws IOException
+     */
+    public static void writeFileNoAppend(String filePath, String content) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(filePath,false));
         writer.write(content + "\n");
         writer.close();
     }
@@ -136,16 +148,37 @@ public  class FileUtils {
         return objectFile;
     }
 
-    public static String getTreeHeadHash(){
+    public static String getParentHash(){
         try {
+            // 到head文件中找到当前分支的路径
             String branch = readFile(GitUtils.headPath);
+            // 向分支中找到parentHash
             File file = new File(GitUtils.minigitDir + File.separator + branch);
             if(!file.exists()){
                 System.out.println("当前分支还没有commit！");
                 return null;
             }
             String commitHash =  readFile(file.getAbsolutePath());
+            return commitHash;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getTreeHeadHash(){
+        try {
+            // 到head文件中找到当前分支的路径
+            String branch = readFile(GitUtils.headPath);
+            // 向分支中找到parentHash
+            File file = new File(GitUtils.minigitDir + File.separator + branch);
+            if(!file.exists()){
+                System.out.println("当前分支还没有commit！");
+                return null;
+            }
+            String commitHash =  readFile(file.getAbsolutePath());
+            // 通过commitHash找到commit的objects文件
             File treeHeadFile = getObjectFile(commitHash);
+            // commit的objects文件的第一行保存着treeHeadHash
             if(!treeHeadFile.exists()){
                 System.out.println("treeHeadFile不存在！");
                 return null;

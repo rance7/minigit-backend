@@ -3,6 +3,7 @@ package com.minigit.util;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -37,7 +38,10 @@ public class Sha1Utils {
     public static String calculateFileSha1(File file) {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
-            byte[] data = Files.readAllBytes(file.toPath());
+            System.out.println(file.getAbsolutePath());
+            System.out.println(file.getPath());
+            System.out.println(Paths.get(file.getAbsolutePath()));
+            byte[] data = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
             byte[] bytes = String.format("%s\t%d\t%s\u0000", "blob", data.length, file.getAbsolutePath()).getBytes(StandardCharsets.UTF_8);
             MessageDigest sha1Digest = MessageDigest.getInstance("SHA-1");
             // 更新SHA-1哈希算法的上下文状态，将type和数据长度拼接成的字节数组更新到算法中
