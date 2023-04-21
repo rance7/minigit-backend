@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ServletComponentScan
 @EnableTransactionManagement
 public class MinigitApplication {
-    public static void main(String[] args) {
+    public static void commitTreeMap(String[] args) {
         SpringApplication.run(MinigitApplication.class, args);
         log.info("项目启动成功！！！！！！！！！！！！");
     }

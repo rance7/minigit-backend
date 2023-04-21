@@ -26,7 +26,7 @@ public  class FileUtils {
     }
 
     /**
-     * 写入文件内容（追加）
+     * 写入文件内容（追加）,如果文件不存在会自动创建文件，但是不能自动创建目录
      * @param filePath 文件路径
      * @param content 内容字符串
      * @throws IOException
@@ -45,7 +45,7 @@ public  class FileUtils {
      */
     public static void writeFileNoAppend(String filePath, String content) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(filePath,false));
-        writer.write(content + "\n");
+        writer.write(content);
         writer.close();
     }
     /**
@@ -151,33 +151,28 @@ public  class FileUtils {
     public static String getParentHash(){
         try {
             // 到head文件中找到当前分支的路径
-            String branch = readFile(GitUtils.headPath);
+            String branchName = readLine(GitUtils.headPath);
             // 向分支中找到parentHash
-            File file = new File(GitUtils.minigitDir + File.separator + branch);
+            File file = new File(GitUtils.headsPath + File.separator + branchName);
             if(!file.exists()){
                 System.out.println("当前分支还没有commit！");
                 return null;
             }
-            String commitHash =  readFile(file.getAbsolutePath());
-            return commitHash;
+            String parentCommitHash = readLine(file.getAbsolutePath());
+            return parentCommitHash;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static String getTreeHeadHash(){
+    public static String getTreeHeadHash(String parentCommitHash){
         try {
-            // 到head文件中找到当前分支的路径
-            String branch = readFile(GitUtils.headPath);
-            // 向分支中找到parentHash
-            File file = new File(GitUtils.minigitDir + File.separator + branch);
-            if(!file.exists()){
-                System.out.println("当前分支还没有commit！");
+            if (parentCommitHash == null) {
+                System.out.println("parentCommitHash不存在！");
                 return null;
             }
-            String commitHash =  readFile(file.getAbsolutePath());
-            // 通过commitHash找到commit的objects文件
-            File treeHeadFile = getObjectFile(commitHash);
+            // 通过parentCommitHash找到commit的objects文件
+            File treeHeadFile = getObjectFile(parentCommitHash);
             // commit的objects文件的第一行保存着treeHeadHash
             if(!treeHeadFile.exists()){
                 System.out.println("treeHeadFile不存在！");
@@ -187,6 +182,7 @@ public  class FileUtils {
             return treeHeadHash;
         } catch (IOException e) {
             System.out.println("HEAD文件中保存着当前分支name，不应该抛出异常！");
+            System.out.println(e);
         }
         System.out.println("commitHash或者treeHeadHash出错！");
         return null;

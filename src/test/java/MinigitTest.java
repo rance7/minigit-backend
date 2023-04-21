@@ -1,13 +1,11 @@
 import com.minigit.MinigitApplication;
 import com.minigit.util.*;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 @SpringBootTest(classes = MinigitApplication.class)
@@ -21,45 +19,60 @@ public class MinigitTest {
     }
 
     @Test
-    public void sha1Test() throws IOException {
-        /*FileUtils.deleteFileOrDirectory(DIR + File.separator + ".minigit");
-        GitUtils.init(DIR);
-        File file = new File(DIR + File.separator + "dir0");
-        System.out.println(Sha1Utils.calculateSha1(file));*/
-    }
-
-    @Test
     public void deleteTest() throws IOException {
         FileUtils.deleteFileOrDirectory(DIR + File.separator + ".minigit");
     }
 
-
     @Test
     public void addTest() throws IOException {
-
         GitUtils.init(DIR);
-        File file = new File(DIR + File.separator + "dir0" + File.separator + "p1.txt");
-        System.out.println(file.exists());
-        File[] files = new File[1];
-        files[0] = file;
+        File file1 = new File(DIR + File.separator + "dir0" + File.separator + "p0.txt");
+        File file2 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_1" +
+                File.separator + "p1_1.txt");
+        File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "p1_2.txt");
+        File[] files = new File[3];
+        files[0] = file1;
+        files[1] = file2;
+        files[2] = file3;
         AddUtils.addFile(files);
-        /*GitUtils.init(DIR);
-        File file = new File(DIR + File.separator + "dir0");
-        List<File> files  = new ArrayList<>();
-        files.add(file);
-        GitUtils.add(files);*/
     }
 
     @Test
     public void pathTest(){
         GitUtils.init(DIR);
         File file = new File(DIR + File.separator + "dir0");
+        System.out.println(file.getAbsolutePath());
         System.out.println(file.getPath());
+        System.out.println(Paths.get(file.getAbsolutePath()));
+        // 三个路径一模一样
     }
 
     @Test
     public void commitTest() throws NoSuchAlgorithmException, IOException {
-        GitUtils.init(DIR);
+        initTest();
+        addTest();
+        GitUtils.commit("m","zlji");
     }
+    @Test
+    public void fileTest() throws IOException {
+
+    }
+
+    // test 修改file
+    @Test
+    public void commitAgainTest() throws IOException, NoSuchAlgorithmException {
+        GitUtils.init(DIR);
+        File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "p1_2.txt");
+        File[] files = new File[1];
+        files[0] = file3;
+        AddUtils.addFile(files);
+        GitUtils.commit("m2222","zlji");
+    }
+
+    // test 修改file
+
+    // test 删除file
 
 }
