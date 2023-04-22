@@ -29,12 +29,12 @@ public class MinigitTest {
         File file1 = new File(DIR + File.separator + "dir0" + File.separator + "p0.txt");
         File file2 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_1" +
                 File.separator + "p1_1.txt");
-        File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
-                File.separator + "p1_2.txt");
-        File[] files = new File[3];
+        /*File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "p1_2.txt");*/
+        File[] files = new File[2];
         files[0] = file1;
         files[1] = file2;
-        files[2] = file3;
+        //files[2] = file3;
         AddUtils.addFile(files);
     }
 
@@ -71,8 +71,27 @@ public class MinigitTest {
         GitUtils.commit("m2222","zlji");
     }
 
-    // test 修改file
+    // test 增加file
+    @Test
+    public void addFileCommitAgainTest() throws IOException, NoSuchAlgorithmException {
+        GitUtils.init(DIR);
+        File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "新建文本文档.txt");
+        File[] files = new File[1];
+        files[0] = file3;
+        AddUtils.addFile(files);
+        GitUtils.commit("新增文本文档","zlji");
+    }
 
     // test 删除file
-
+    @Test
+    public void deleteFileCommitAgainTest() throws IOException, NoSuchAlgorithmException {
+        GitUtils.init(DIR);
+        /*File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "新建文本文档.txt");
+        File[] files = new File[1];
+        files[0] = file3;
+        AddUtils.addFile(files);*/
+        GitUtils.commit("删除测试","zlji");
+    }
 }

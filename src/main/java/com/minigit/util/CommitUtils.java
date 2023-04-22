@@ -4,12 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +84,7 @@ public class CommitUtils {
             }
         }
     }
+
     /**
      * 创建indexTree，这是一个map，保存了所有缓存文件的路径和哈希值
      * @param indexMap
@@ -123,10 +121,11 @@ public class CommitUtils {
      * @param
      */
     // 对于文件名字被改变的文件，我们的处理策略是，commit中删除旧文件，添加新的文件
-    public static Map<String, String> getCommitTree(Map<String, String> commitTreeMap, Map<String, String> fileMap,
+    public static Map<String, String> getNewCommitTree(Map<String, String> commitTreeMap, Map<String, String> fileMap,
                                    Map<String, String> indexMap){
         if(commitTreeMap == null){
             // 如果commitTreeMap为null，说明是第一次提交，直接使用indexMap
+            System.out.println(indexMap);
             return indexMap;
         }
         // 对每个缓冲区的文件和commitTree中的文件做比较
@@ -150,10 +149,14 @@ public class CommitUtils {
         }
         // 上面的操作已经将新添加的文件和修改的文件都添加到了commitTree，现在要检测已删除的文件
         // 遍历commitTreeMap中的key，若在实际文件目录中不存在，那么是已删除的
+        List<String> list = new ArrayList<>();
         for (String path: commitTreeMap.keySet()){
             if(!fileMap.containsKey(path)){
-                commitTreeMap.remove(path);
+                list.add(path);
             }
+        }
+        for (String path : list) {
+            commitTreeMap.remove(path);
         }
         // 更新成功！！！！！！！！,获得更新后的commitTreeMap
         return commitTreeMap;
@@ -166,31 +169,30 @@ public class CommitUtils {
     public static String writeTree(File file, Map<String,String> commitTreeMap) {
         List<TreeEntry> treeEntries = new ArrayList<>();
         String hash;
-        if(file.getAbsolutePath().equals(GitUtils.minigitDir)) return null;
+        if (file.getAbsolutePath().equals(GitUtils.minigitDir)) return null;
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 TreeEntry.EntryType entryType = child.isDirectory() ? TreeEntry.EntryType.tree : TreeEntry.EntryType.blob;
                 hash = writeTree(child, commitTreeMap);
-                if(hash != null){
-                    treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
+                if(hash == null){
+                    continue;
                 }
+                treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
             }
-            hash = calculateDirSha1(treeEntries);
+            if(treeEntries == null || treeEntries.size() == 0){
+                return null;
+            }
+            hash = calculateDirSha1(treeEntries, file.getAbsolutePath());
             // 在这里调用了writeObject方法，将文件写入object
-            writeObject(treeEntries);
-        } else if(file.isFile() && commitTreeMap.containsKey(file.getAbsolutePath())) {
-            // 如果commitTreeMap中包含这个文件,计算hash
+            writeObject(treeEntries, file.getAbsolutePath());
+        } else{
             hash = commitTreeMap.get(file.getAbsolutePath());
-        } else {
-            hash = null;
         }
         // 获得treeHeadHash
         return hash;
     }
 
-
-
-    public static void writeObject(List<TreeEntry> treeEntries){
+    public static void writeObject(List<TreeEntry> treeEntries, String dirPath){
         StringBuilder sb = new StringBuilder();
         // 计算blob文件的哈希值，写入objects
         for (TreeEntry treeEntry : treeEntries) {
@@ -204,8 +206,11 @@ public class CommitUtils {
                 if(treeEntry.getEntryType() == TreeEntry.EntryType.blob){
                     try {
                         File file = FileUtils.createObjectFile(treeEntry.getHash());
-                        String content = FileUtils.readFile(treeEntry.getPath());
-                        FileUtils.writeFile(file.getAbsolutePath(), content);
+                        // file == null，代表objectFile已经存在，即文件未发生改变，也就不用写
+                        if(file != null){
+                            String content = FileUtils.readFile(treeEntry.getPath());
+                            FileUtils.writeFile(file.getAbsolutePath(), content);
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -213,11 +218,13 @@ public class CommitUtils {
             }
         }
         // 计算tree文件的哈希值，写入objects
-        String dirHash = calculateDirSha1(treeEntries);
+        String dirHash = calculateDirSha1(treeEntries, dirPath);
         File dirFile = FileUtils.createObjectFile(dirHash);
         try {
-            dirFile.createNewFile();
-            FileUtils.writeFile(dirFile.getAbsolutePath(), sb.toString());
+            if(dirFile != null) {
+                dirFile.createNewFile();
+                FileUtils.writeFile(dirFile.getAbsolutePath(), sb.toString());
+            }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

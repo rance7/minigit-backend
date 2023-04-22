@@ -71,9 +71,12 @@ public class GitUtils {
         Map<String, String> commitTreeMap = new HashMap<>();
         createIndexTree(indexMap);
         createOldCommitTree(oldTreeHeadHash, commitTreeMap);
+        System.out.println("oldCommitTreeMap          " + commitTreeMap);
         createFileTree(fileMap,new File(GitUtils.originDir));
-        getCommitTree(commitTreeMap, fileMap, indexMap);
+        getNewCommitTree(commitTreeMap, fileMap, indexMap);
         String newTreeHeadHash = writeTree(new File(GitUtils.originDir), commitTreeMap);
+        System.out.println("indexMap    " + indexMap);
+        System.out.println("newCommitTreeMap         " + commitTreeMap);
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间

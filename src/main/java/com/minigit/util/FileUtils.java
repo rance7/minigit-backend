@@ -132,6 +132,8 @@ public  class FileUtils {
                 System.out.println("创建文件失败！");
                 throw new RuntimeException(e);
             }
+        }else{
+            return null;
         }
         return objectFile;
     }

@@ -11,9 +11,17 @@ import java.util.List;
 public class Sha1Utils {
 
     // 计算tree文件的hash值
-    public static String calculateDirSha1(List<TreeEntry> treeEntries) {
+    public static String calculateDirSha1(List<TreeEntry> treeEntries,String dirPath) {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
+            // 如果treeEntries为空，说明这是一个空目录，那么就手动添加一个.gitkeep文件，这个文件中的内容即空目录的路径
+            // 目的是可以使用这个.keepgit文件计算哈希值
+            if(treeEntries == null || treeEntries.size() == 0){
+                File file = new File(dirPath,".gitkeep");
+                FileUtils.writeFile(file.getAbsolutePath(), dirPath);
+                String hash = calculateFileSha1(file);
+                treeEntries.add(new TreeEntry(file.getAbsolutePath(), hash, TreeEntry.EntryType.blob));
+            }
             StringBuilder sb = new StringBuilder();
             for (TreeEntry treeEntry : treeEntries) {
                 if(treeEntry.getHash() != null) {
