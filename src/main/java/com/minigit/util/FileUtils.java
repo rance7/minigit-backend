@@ -1,11 +1,22 @@
 package com.minigit.util;
 
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 
 import java.io.*;
-import java.util.List;
 
 public  class FileUtils {
+    /**
+     * 读取文件内容
+     * @param filePath 文件路径
+     * @return 文件内容字符串
+     * @throws IOException
+     */
+    public static void createFile(String filePath) throws IOException {
+        File file = new File(filePath);
+        if(!file.exists()){
+            file.getParentFile().mkdirs(); // 创建父目录
+            file.createNewFile(); // 创建文件
+        }
+    }
 
     /**
      * 读取文件内容
@@ -52,6 +63,7 @@ public  class FileUtils {
      * 读取文件的一行并去除换行符
      */
     public static String readLine(String filePath) throws IOException {
+        //System.out.println(filePath);
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         String line = reader.readLine();
         reader.close();
@@ -150,7 +162,11 @@ public  class FileUtils {
         return objectFile;
     }
 
-    public static String getParentHash(){
+    /**
+     * 获取当前的commitHash
+     * @return
+     */
+    public static String getCurrentCommitHash(){
         try {
             // 到head文件中找到当前分支的路径
             String branchName = readLine(GitUtils.headPath);
@@ -167,14 +183,19 @@ public  class FileUtils {
         }
     }
 
-    public static String getTreeHeadHash(String parentCommitHash){
+    /**
+     * 获取当前commit的treeHeadHash
+     * @param currentCommitHash
+     * @return
+     */
+    public static String getTreeHeadHash(String currentCommitHash){
         try {
-            if (parentCommitHash == null) {
-                System.out.println("parentCommitHash不存在！");
+            if (currentCommitHash == null) {
+                System.out.println("currentCommitHash不存在！");
                 return null;
             }
             // 通过parentCommitHash找到commit的objects文件
-            File treeHeadFile = getObjectFile(parentCommitHash);
+            File treeHeadFile = getObjectFile(currentCommitHash);
             // commit的objects文件的第一行保存着treeHeadHash
             if(!treeHeadFile.exists()){
                 System.out.println("treeHeadFile不存在！");

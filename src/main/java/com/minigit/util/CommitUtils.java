@@ -29,7 +29,7 @@ public class CommitUtils {
         return hashBuilder.toString();
     }
     /**
-     * 创建旧的commitTree，这是一个map，保存了所有blob文件的路径和哈希值，传入的hash是treeHeadHash
+     * 创建旧(当前的)的commitTree，这是一个map，保存了所有blob文件的路径和哈希值，传入的hash是treeHeadHash
      * @param hash
      * @param commitTreeMap
      * @throws IOException
@@ -174,6 +174,7 @@ public class CommitUtils {
             for (File child : file.listFiles()) {
                 TreeEntry.EntryType entryType = child.isDirectory() ? TreeEntry.EntryType.tree : TreeEntry.EntryType.blob;
                 hash = writeTree(child, commitTreeMap);
+                // 这条语句有些多余，因为应该不存在hash为null的treeEntry
                 if(hash != null){
                     treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
                 }
@@ -185,7 +186,6 @@ public class CommitUtils {
             }
             hash = calculateDirSha1(treeEntries, file.getAbsolutePath());
             writeObject(treeEntries, file.getAbsolutePath());
-            System.out.println(treeEntries);
         } else{
             hash = commitTreeMap.get(file.getAbsolutePath());
         }

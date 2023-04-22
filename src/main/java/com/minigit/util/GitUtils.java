@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.minigit.util.BackUtils.*;
 import static com.minigit.util.CommitUtils.*;
 
 
@@ -64,25 +65,22 @@ public class GitUtils {
      * @param
      */
     public static void commit(String message, String committer) throws NoSuchAlgorithmException {
-        String parentCommitHash = FileUtils.getParentHash();
-        String oldTreeHeadHash = FileUtils.getTreeHeadHash(parentCommitHash);
+        String oldCommitHash = FileUtils.getCurrentCommitHash();
+        String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash);
         Map<String, String> fileMap = new HashMap<>();
         Map<String, String> indexMap = new HashMap<>();
         Map<String, String> commitTreeMap = new HashMap<>();
         createIndexTree(indexMap);
         createOldCommitTree(oldTreeHeadHash, commitTreeMap);
-        System.out.println("oldCommitTreeMap          " + commitTreeMap);
         createFileTree(fileMap,new File(GitUtils.originDir));
         getNewCommitTree(commitTreeMap, fileMap, indexMap);
         String newTreeHeadHash = writeTree(new File(GitUtils.originDir), commitTreeMap);
-        System.out.println("indexMap    " + indexMap);
-        System.out.println("newCommitTreeMap         " + commitTreeMap);
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间
         String data = sb.append(newTreeHeadHash + "\n")
                 .append(committer + "\t" + "2020-4-18 00:00:00 \n")
-                .append(parentCommitHash + "\n")
+                .append(oldCommitHash + "\n")
                 .append(message).toString();
         String commitHash = calculateCommitHash(data);
         File file = FileUtils.createObjectFile(commitHash);
@@ -91,6 +89,50 @@ public class GitUtils {
             // 将refs/head/main中的commitHash替换为最新的hash
             FileUtils.writeFileNoAppend(GitUtils.headsPath + File.separator +
                     FileUtils.readLine(GitUtils.headPath), commitHash);
+            // 删除缓冲区的内容
+            FileUtils.deleteFileOrDirectory(GitUtils.indexPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void back(String oldCommitHash){
+        Map<String, String> currentCommitTreeMap = getCurrentCommitTree();
+        Map<String, String> oldCommitTreeMap = getOldCommitTree(oldCommitHash);
+        Map<String, String> fileMap = getFileMap();
+        Map<String, String> deleteMap = getDeleteMap(currentCommitTreeMap, oldCommitTreeMap);
+        Map<String, String> createMap = getCreateMap(currentCommitTreeMap, oldCommitTreeMap);
+        for (String path : deleteMap.keySet()) {
+            if(fileMap.containsKey(path)){
+                new File(path).delete();
+            }
+        }
+        for (String path: createMap.keySet()){
+            if(!fileMap.containsKey(path)){
+                try {
+                    FileUtils.createFile(path);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        for (String path : oldCommitTreeMap.keySet()) {
+            String currentHash = Sha1Utils.calculateFileSha1(new File(path));
+            String oldhash = oldCommitTreeMap.get(path);
+            if(oldhash != currentHash){
+                File objectFile = FileUtils.getObjectFile(oldhash);
+                try {
+                    String content = FileUtils.readFile(objectFile.getAbsolutePath());
+                    FileUtils.writeFileNoAppend(path, content);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        // 将refs/head/main中的commitHash替换为最新的hash
+        try {
+            FileUtils.writeFileNoAppend(GitUtils.headsPath + File.separator +
+                    FileUtils.readLine(GitUtils.headPath), oldCommitHash);
             // 删除缓冲区的内容
             FileUtils.deleteFileOrDirectory(GitUtils.indexPath);
         } catch (IOException e) {

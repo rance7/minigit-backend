@@ -1,6 +1,7 @@
 import com.minigit.MinigitApplication;
 import com.minigit.util.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.*;
@@ -49,23 +50,34 @@ public class MinigitTest {
     }
 
     @Test
+    public void fileTest() throws IOException {
+        /*String path = DIR + File.separator + "dir0" + File.separator + "dir1_2" +
+                File.separator + "p1_2.txt";
+        System.out.println(path.substring(0,path.lastIndexOf(File.separator)));*/
+        File file = new File(DIR + File.separator + "dir1111111" + File.separator + "dir1111" +
+                File.separator + "p1_2.txt");
+        if(!file.exists()){
+            file.getParentFile().mkdirs(); // 创建父目录
+            file.createNewFile(); // 创建文件
+        }
+    }
+
+    @Test
     public void commitTest() throws NoSuchAlgorithmException, IOException {
         initTest();
         addTest();
         GitUtils.commit("m","zlji");
     }
-    @Test
-    public void fileTest() throws IOException {
 
-    }
 
     // test 修改file
     @Test
     public void commitAgainTest() throws IOException, NoSuchAlgorithmException {
         GitUtils.init(DIR);
         File file3 = new File(DIR + File.separator + "dir0" + File.separator + "dir1_2" +
-                File.separator + "p1_2.txt");
+                File.separator + "第二次commit新增的文件.txt");
         File[] files = new File[1];
+        // 另外删除了p0.txt
         files[0] = file3;
         AddUtils.addFile(files);
         GitUtils.commit("m2222","zlji");
@@ -93,5 +105,12 @@ public class MinigitTest {
         files[0] = file3;
         AddUtils.addFile(files);*/
         GitUtils.commit("删除测试","zlji");
+    }
+
+    @Test
+    public void backTest(){
+        GitUtils.init(DIR);
+        String commitHash = "131ae94464aabaa59841183c26928a49aab6195a";
+        GitUtils.back(commitHash);
     }
 }
