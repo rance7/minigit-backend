@@ -174,17 +174,18 @@ public class CommitUtils {
             for (File child : file.listFiles()) {
                 TreeEntry.EntryType entryType = child.isDirectory() ? TreeEntry.EntryType.tree : TreeEntry.EntryType.blob;
                 hash = writeTree(child, commitTreeMap);
-                if(hash == null){
-                    continue;
+                if(hash != null){
+                    treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
                 }
-                treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
             }
-            if(treeEntries == null || treeEntries.size() == 0){
+            // 对于空文件夹，应该在前端传入路径的时候做判断，如果是空目录，则加入一个.gitkeep文件，
+            // 在write-tree的时候，map中的应该都是blob文件，不存在空目录的情况
+            if (treeEntries.size() == 0){
                 return null;
             }
             hash = calculateDirSha1(treeEntries, file.getAbsolutePath());
-            // 在这里调用了writeObject方法，将文件写入object
             writeObject(treeEntries, file.getAbsolutePath());
+            System.out.println(treeEntries);
         } else{
             hash = commitTreeMap.get(file.getAbsolutePath());
         }
@@ -193,6 +194,10 @@ public class CommitUtils {
     }
 
     public static void writeObject(List<TreeEntry> treeEntries, String dirPath){
+        if(treeEntries.size() == 0){
+            // 这个判断有一点多余，因为暂时只有writeTree中调用了这个方法，而writeTree中已经有了此情况的处理
+            return ;
+        }
         StringBuilder sb = new StringBuilder();
         // 计算blob文件的哈希值，写入objects
         for (TreeEntry treeEntry : treeEntries) {

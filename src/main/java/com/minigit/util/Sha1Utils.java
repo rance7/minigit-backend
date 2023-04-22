@@ -12,18 +12,15 @@ public class Sha1Utils {
 
     // 计算tree文件的hash值
     public static String calculateDirSha1(List<TreeEntry> treeEntries,String dirPath) {
+        if(treeEntries.size() == 0){
+            // 这个判断有一点多余，因为暂时只有writeTree中调用了这个方法，而writeTree中已经有了此情况的处理
+            return null;
+        }
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
-            // 如果treeEntries为空，说明这是一个空目录，那么就手动添加一个.gitkeep文件，这个文件中的内容即空目录的路径
-            // 目的是可以使用这个.keepgit文件计算哈希值
-            if(treeEntries == null || treeEntries.size() == 0){
-                File file = new File(dirPath,".gitkeep");
-                FileUtils.writeFile(file.getAbsolutePath(), dirPath);
-                String hash = calculateFileSha1(file);
-                treeEntries.add(new TreeEntry(file.getAbsolutePath(), hash, TreeEntry.EntryType.blob));
-            }
             StringBuilder sb = new StringBuilder();
             for (TreeEntry treeEntry : treeEntries) {
+                // 如果treeEntry的hash值不为null，说明是版本树需要记录的文件
                 if(treeEntry.getHash() != null) {
                     sb.append(treeEntry.getEntryType()).append("\t").append(treeEntry.getPath())
                             .append("\t").append(treeEntry.getHash()).append("\n");
