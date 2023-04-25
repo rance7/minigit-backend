@@ -1,9 +1,9 @@
-package com.minigit.service.serviceImpl;
+package com.minigit.entityService.serviceImpl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.minigit.entity.User;
 import com.minigit.mapper.UserMapper;
-import com.minigit.service.UserService;
+import com.minigit.entityService.UserService;
 import org.springframework.stereotype.Service;
 
 @Service

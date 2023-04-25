@@ -1,9 +1,12 @@
 import com.minigit.MinigitApplication;
+import com.minigit.Service.MailService;
+import com.minigit.entityService.UserService;
 import com.minigit.util.*;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.mail.MessagingException;
 import java.io.*;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -107,10 +110,27 @@ public class MinigitTest {
         GitUtils.commit("删除测试","zlji");
     }
 
+    // 回溯测试
     @Test
     public void backTest(){
         GitUtils.init(DIR);
         String commitHash = "131ae94464aabaa59841183c26928a49aab6195a";
         GitUtils.back(commitHash);
+    }
+
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private MailService mailService;
+
+    // User注册测试
+    @Test
+    public void registerTest(){
+
+    }
+
+    @Test
+    public void mailTest() throws MessagingException {
+        mailService.sendMail("2875786463@qq.com", "测试@value", "shabi！");
     }
 }

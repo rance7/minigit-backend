@@ -1,10 +1,10 @@
-package com.minigit.service.serviceImpl;
+package com.minigit.entityService.serviceImpl;
 
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.minigit.entity.Commit;
 import com.minigit.mapper.CommitMapper;
-import com.minigit.service.CommitService;
+import com.minigit.entityService.CommitService;
 import org.springframework.stereotype.Service;
 
 

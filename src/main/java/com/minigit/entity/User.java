@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
 public class User implements Serializable {
@@ -13,6 +14,5 @@ public class User implements Serializable {
     private String pwd;
     private String email;
     @TableField(fill = FieldFill.INSERT)
-    private String createdTime;
-
+    private LocalDateTime createTime;
 }

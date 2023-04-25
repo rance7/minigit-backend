@@ -1,4 +1,4 @@
-package com.minigit.service;
+package com.minigit.entityService;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.minigit.entity.User;
