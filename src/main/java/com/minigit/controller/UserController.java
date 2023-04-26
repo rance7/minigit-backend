@@ -1,7 +1,7 @@
 package com.minigit.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.minigit.Service.MailService;
+import com.minigit.service.MailService;
 import com.minigit.common.R;
 import com.minigit.entity.User;
 import com.minigit.entityService.UserService;
@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/user")
 public class UserController {
     @Autowired
     private UserService userService;
@@ -126,6 +126,11 @@ public class UserController {
         userService.save(user);
 
         return R.success(user);
+    }
+
+    public R<String> logout(HttpServletRequest request){
+        request.getSession().removeAttribute("user");
+        return R.success("退出成功！");
     }
 
 }

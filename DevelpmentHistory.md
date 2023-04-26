@@ -8,7 +8,7 @@
 
 ## 4.22
 
-#### 修改commie功能的实现
+#### 修改commit功能的实现
 
 - 修改了commit会计算实际目录所有文件（即管理了不被minigit管理的文件）hash并写入object数据库的bug。
 
@@ -25,3 +25,9 @@
 
 - 实现了邮箱服务功能，暂时使用自己的邮箱，不过一分钟只能发一条消息。
 - 完成了注册和登录功能并通过测试。
+
+## 4.26
+
+- 对数据库中的表做了一些修改，例如repo表中加了一个path
+- 我希望用户访问的url类似于github的**"/{user}/{repo}/blob/{branch}/{filepath:.+}"**，为了实现这个功能，做了一些调查，把原本实现的功能做了一些修改。
+- 添加了pathController和repoController等类，目前repoController中已经完成了一部分，但是还没有测试。

@@ -6,18 +6,15 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 public class Repo implements Serializable {
     private Long id;
-    private String author;
+    private Long authorId;
     private String name;
-    private boolean isPublic;
-    private Long userId;
+    private Boolean isPublic;
+    private String path;
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-    @TableField(exist = false)
-    private List<Branch> branches;
+    private LocalDateTime createTime;
 
 }

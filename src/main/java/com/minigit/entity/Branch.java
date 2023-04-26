@@ -10,16 +10,13 @@ import java.util.List;
 
 @Data
 public class Branch implements Serializable {
+    private Long id;
     private String name;
     private Long repoId;
-    private String author;
+    private Long authorId;
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime modifyTime;
+    private LocalDateTime createTime;
     private String headHash;
-    @TableField(exist = false)
-    private List<Commit> commitHistory;
 
 }
 

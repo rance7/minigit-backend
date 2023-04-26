@@ -1,6 +1,7 @@
 package com.minigit.util;
 
 import com.minigit.common.R;
+import com.minigit.entity.Commit;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
@@ -64,8 +65,10 @@ public class GitUtils {
      * 生成新的commitHash，将commit信息写入object，将refs/head/commitTreeMap中的commitHash替换为最新的hash，删除缓冲区的内容
      * @param
      */
-    public static void commit(String message, String committer) throws NoSuchAlgorithmException {
+    public static Commit commit(String message, String committer) throws NoSuchAlgorithmException {
+        Commit commit = new Commit();
         String oldCommitHash = FileUtils.getCurrentCommitHash();
+        commit.setParentHash(oldCommitHash);
         String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash);
         Map<String, String> fileMap = new HashMap<>();
         Map<String, String> indexMap = new HashMap<>();
@@ -75,6 +78,7 @@ public class GitUtils {
         createFileTree(fileMap,new File(GitUtils.originDir));
         getNewCommitTree(commitTreeMap, fileMap, indexMap);
         String newTreeHeadHash = writeTree(new File(GitUtils.originDir), commitTreeMap);
+        commit.setMessage(message);
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间
@@ -83,6 +87,7 @@ public class GitUtils {
                 .append(oldCommitHash + "\n")
                 .append(message).toString();
         String commitHash = calculateCommitHash(data);
+        commit.setHash(commitHash);
         File file = FileUtils.createObjectFile(commitHash);
         try {
             FileUtils.writeFile(file.getAbsolutePath(), data);
@@ -94,6 +99,7 @@ public class GitUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return commit;
     }
 
     public static void back(String oldCommitHash){

@@ -10,15 +10,13 @@ import java.time.LocalDateTime;
 @Data
 public class Commit implements Serializable {
     private Long id;
-    private String repo_id;
-    private String branchName;
+    private Long repoId;
+    private Long branchId;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime commitTime;
     private String committer;
     private String message;
     private String hash;
     private String parentHash;
-
-
 
 }

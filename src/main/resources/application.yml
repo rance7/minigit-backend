@@ -28,3 +28,11 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: ASSIGN_ID
+ftp:
+  protocol: sftp
+  port: 22
+  address: 47.120.10.89
+  username: root
+  password: Long.0331
+  config:
+    StrictHostKeyChecking: no

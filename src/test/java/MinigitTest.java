@@ -1,5 +1,5 @@
 import com.minigit.MinigitApplication;
-import com.minigit.Service.MailService;
+import com.minigit.service.MailService;
 import com.minigit.entityService.UserService;
 import com.minigit.util.*;
 import org.junit.jupiter.api.Test;
