@@ -31,9 +31,9 @@ public class LoginCheckFilter implements Filter {
         log.info("拦截到的请求：{}",requestURI);
         //定义不需要处理的请求
         String[] urls = new String[]{
-                "/user/login",
-                "/user/register",
-                "/user/logout"
+                "/login",
+                "/register",
+                "/sendMsg"
         };
 
         //2.判断本次请求是否需要处理
@@ -47,8 +47,8 @@ public class LoginCheckFilter implements Filter {
         }
 
         //4.判断登录状态，如果已登录，则直接放行
-        if (request.getSession().getAttribute("employee") != null) {
-            log.info("用户已登录，用户id为：{}",request.getSession().getAttribute("employee"));
+        if (request.getSession().getAttribute("user") != null) {
+            log.info("用户已登录，用户id为：{}",request.getSession().getAttribute("user"));
             filterChain.doFilter(request,response);
             return;
         }

@@ -31,3 +31,12 @@
 - 对数据库中的表做了一些修改，例如repo表中加了一个path
 - 我希望用户访问的url类似于github的**"/{user}/{repo}/blob/{branch}/{filepath:.+}"**，为了实现这个功能，做了一些调查，把原本实现的功能做了一些修改。
 - 添加了pathController和repoController等类，目前repoController中已经完成了一部分，但是还没有测试。
+
+## 4.27
+
+- 删除了commit表中的repo_id字段，因为根据branch_id就可以找到repo_id。
+- 保留了branch表中的author_id字段，因为branch的创建者不一定是repo的创建者
+- repoController中的功能已基本完成并且已经通过测试。
+- 修改了controller中的访问路径，未来可能会继续修改。
+
+![image-20230427112817713](markdown-img/DevelpmentHistory.assets/image-20230427112817713.png)

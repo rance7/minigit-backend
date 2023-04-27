@@ -9,10 +9,7 @@ import com.minigit.util.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
@@ -127,7 +124,7 @@ public class UserController {
 
         return R.success(user);
     }
-
+    @GetMapping("/logout")
     public R<String> logout(HttpServletRequest request){
         request.getSession().removeAttribute("user");
         return R.success("退出成功！");

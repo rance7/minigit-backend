@@ -6,17 +6,16 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 public class Branch implements Serializable {
     private Long id;
     private String name;
     private Long repoId;
+    // author不一定是repo的创始人，还可能是其他成员
     private Long authorId;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-    private String headHash;
-
+    private String commitHash;
 }
 

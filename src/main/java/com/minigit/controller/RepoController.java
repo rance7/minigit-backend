@@ -41,7 +41,7 @@ public class RepoController {
         return R.success(repo);
     }
 
-    @GetMapping()
+    @GetMapping("/repos")
     public R<List<Repo>> getAllRepo(@PathVariable String user, HttpSession session){
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getAccountName, user);
@@ -54,18 +54,13 @@ public class RepoController {
         return R.success(list);
     }
 
-    @PostMapping("/add")
-    public R<Repo> addRepo(@PathVariable String user, @RequestBody Repo repo, HttpSession session){
+    @DeleteMapping("/{repo}")
+    public R<String> deleteRepo(@PathVariable String repo, HttpSession session){
+        LambdaQueryWrapper<Repo> queryWrapper  = new LambdaQueryWrapper<>();
         Long authorId = (Long) session.getAttribute("user");
-        repo.setAuthorId(authorId);
-        repoService.save(repo);
-        return R.success(repo);
-    }
-
-    @DeleteMapping
-    public R<String> deleteRepo(HttpSession session){
-
-        return null;
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repo);
+        repoService.remove(queryWrapper);
+        return R.success("删除成功！");
     }
 
     @PutMapping
@@ -73,8 +68,5 @@ public class RepoController {
 
         return null;
     }
-
-
-
 
 }
