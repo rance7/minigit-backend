@@ -36,3 +36,5 @@ ftp:
   password: Long.0331
   config:
     StrictHostKeyChecking: no
+
+remote-repo-path: "/mydata/git_repo"

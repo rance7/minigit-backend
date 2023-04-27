@@ -63,7 +63,6 @@ public  class FileUtils {
      * 读取文件的一行并去除换行符
      */
     public static String readLine(String filePath) throws IOException {
-        //System.out.println(filePath);
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         String line = reader.readLine();
         reader.close();

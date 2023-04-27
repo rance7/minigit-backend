@@ -7,10 +7,12 @@ import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.minigit.util.BackUtils.*;
 import static com.minigit.util.CommitUtils.*;
+import static com.minigit.util.Sha1Utils.calculateFileSha1;
 
 
 public class GitUtils {
@@ -61,6 +63,18 @@ public class GitUtils {
         return R.success("Init Success!");
     }
 
+    public static void add(List<File> files) {
+        for (File file : files) {
+            String hash = calculateFileSha1(file);
+            try {
+                FileUtils.writeFile(GitUtils.indexPath,
+                        file.getAbsolutePath() + "\t" + hash);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     /**
      * 生成新的commitHash，将commit信息写入object，将refs/head/commitTreeMap中的commitHash替换为最新的hash，删除缓冲区的内容
      * @param
@@ -68,7 +82,6 @@ public class GitUtils {
     public static Commit commit(String message, String committer) throws NoSuchAlgorithmException {
         Commit commit = new Commit();
         String oldCommitHash = FileUtils.getCurrentCommitHash();
-        commit.setParentHash(oldCommitHash);
         String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash);
         Map<String, String> fileMap = new HashMap<>();
         Map<String, String> indexMap = new HashMap<>();
@@ -78,7 +91,6 @@ public class GitUtils {
         createFileTree(fileMap,new File(GitUtils.originDir));
         getNewCommitTree(commitTreeMap, fileMap, indexMap);
         String newTreeHeadHash = writeTree(new File(GitUtils.originDir), commitTreeMap);
-        commit.setMessage(message);
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间
@@ -87,7 +99,10 @@ public class GitUtils {
                 .append(oldCommitHash + "\n")
                 .append(message).toString();
         String commitHash = calculateCommitHash(data);
+        commit.setParentHash(oldCommitHash);
+        commit.setMessage(message);
         commit.setHash(commitHash);
+        commit.setCommitter(committer);
         File file = FileUtils.createObjectFile(commitHash);
         try {
             FileUtils.writeFile(file.getAbsolutePath(), data);
@@ -143,6 +158,19 @@ public class GitUtils {
             FileUtils.deleteFileOrDirectory(GitUtils.indexPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void push(List<Commit> commitHashes){
+        for(int i = 0; i < commitHashes.size(); i++){
+            String commitHash = commitHashes.get(i).getHash();
+            String treeHeadHash = FileUtils.getTreeHeadHash(commitHash);
+            File file = FileUtils.getObjectFile(treeHeadHash);
+            try {
+                UploadUtils.uploadFile(new FileInputStream(file), commitHash);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

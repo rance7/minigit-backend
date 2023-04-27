@@ -41,4 +41,8 @@
 
 ![image-20230427112817713](markdown-img/DevelpmentHistory.assets/image-20230427112817713.png)
 
-# 
+- 计划修改数据库，增加外键（为了能够级联删除和级联更新），目前的数据库存在问题，如删除仓库，但是branch和commit表不会改变
+- 删除AddUtils，将add方法转移到GitUtils中
+- 增加branchController，CommitAndPushController和FileController
+- BranchController中完成了addBranch方法和查询所有分支的方法，并通过测试
+- commitAndPushController中完成了add、commit和push方法，但是还没有测试
