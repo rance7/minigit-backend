@@ -46,3 +46,9 @@
 - 增加branchController，CommitAndPushController和FileController
 - BranchController中完成了addBranch方法和查询所有分支的方法，并通过测试
 - commitAndPushController中完成了add、commit和push方法，但是还没有测试
+
+## 4.28
+
+- 对项目结构做了很大的修改：将Git相关操作的Util类删除，添加了GitService等类。区别在于，util-version是本地测试的版本，每次都要做init获得项目路径。而service-version中，只需要访问数据库获得repo的path。
+- 修改后的add、commit、back等方法已经通过测试
+- 现在的项目中允许空提交，也就缓冲区没有任何文件的空提交，提交不会产生问题。但是如果我们在一个空仓库中做一个空提交，那么下一次提交在读取上一次提交的时候，会出现问题，暂时还没有做这方面的错误处理。

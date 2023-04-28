@@ -1,4 +1,8 @@
-package com.minigit.util;
+package com.minigit.service;
+
+import com.minigit.util.FileUtils;
+import com.minigit.util.TreeEntry;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,12 +17,13 @@ import java.util.Map;
 import static com.minigit.util.Sha1Utils.calculateDirSha1;
 import static com.minigit.util.Sha1Utils.calculateFileSha1;
 
-public class CommitUtils {
+@Service
+public class CommitUtilService {
     /**
      * 计算commitHash值
      * @param
      */
-    public static String calculateCommitHash(String data) throws NoSuchAlgorithmException {
+    public String calculateCommitHash(String data) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
         // byte是0-255的整数
         byte[] hashBytes = digest.digest(data.getBytes(StandardCharsets.UTF_8));
@@ -28,18 +33,19 @@ public class CommitUtils {
         }
         return hashBuilder.toString();
     }
+
     /**
      * 创建旧(当前的)的commitTree，这是一个map，保存了所有blob文件的路径和哈希值，传入的hash是treeHeadHash
      * @param hash
      * @param commitTreeMap
      * @throws IOException
      */
-    public static void createOldCommitTree(String hash, Map<String,String> commitTreeMap){
+    public void createOldCommitTree(String hash, Map<String,String> commitTreeMap, String repoPath){
         try {
             if(hash == null){
                 return;
             }
-            File file = FileUtils.getObjectFile(hash);
+            File file = FileUtils.getObjectFile(hash, repoPath);
             String content = FileUtils.readFile(file.getAbsolutePath());
             if(!content.startsWith("blob") && !content.startsWith("tree")){
                 System.out.println("目标文件类型或内容错误！" + content);
@@ -52,7 +58,7 @@ public class CommitUtils {
                     commitTreeMap.put(s[1],s[2]);
                 }
                 else if(s[0].equals("tree")){
-                    createOldCommitTree(s[2],commitTreeMap);
+                    createOldCommitTree(s[2],commitTreeMap, repoPath);
                 }else {
                     return;
                 }
@@ -67,9 +73,9 @@ public class CommitUtils {
      * 创建fileTree，这是一个map，保存了所有文件（不包括目录）的路径和哈希值
      * @param fileMap
      */
-    public static void createFileTree(Map<String, String> fileMap, File file){
+    public void createFileTree(Map<String, String> fileMap, File file){
         // 忽略掉.minigit目录
-        if(GitUtils.minigitDir.toString().equals(file.getAbsolutePath())) {
+        if(file.getName() == ".minigit"){
             return;
         }
         if(file.isDirectory()){
@@ -89,8 +95,8 @@ public class CommitUtils {
      * 创建indexTree，这是一个map，保存了所有缓存文件的路径和哈希值
      * @param indexMap
      */
-    public static void createIndexTree(Map<String, String> indexMap){
-        File file = new File(GitUtils.indexPath);
+    public static void createIndexTree(Map<String, String> indexMap, String repoPath){
+        File file = new File(repoPath + File.separator + ".minigit" + File.separator + "INDEX");
         try {
             if(!file.exists()){
                 System.out.println("没有add任何文件！");
@@ -121,8 +127,8 @@ public class CommitUtils {
      * @param
      */
     // 对于文件名字被改变的文件，我们的处理策略是，commit中删除旧文件，添加新的文件
-    public static Map<String, String> getNewCommitTree(Map<String, String> commitTreeMap, Map<String, String> fileMap,
-                                   Map<String, String> indexMap){
+    public Map<String, String> getNewCommitTree(Map<String, String> commitTreeMap, Map<String, String> fileMap,
+                                                       Map<String, String> indexMap){
         if(commitTreeMap == null){
             // 如果commitTreeMap为null，说明是第一次提交，直接使用indexMap
             System.out.println(indexMap);
@@ -166,14 +172,14 @@ public class CommitUtils {
      * 根据新的commitTree将文件写入object，获得treeHeadHash
      * @param
      */
-    public static String writeTree(File file, Map<String,String> commitTreeMap) {
+    public String writeTree(File file, Map<String,String> commitTreeMap, String repoPath) {
         List<TreeEntry> treeEntries = new ArrayList<>();
         String hash;
-        if (file.getAbsolutePath().equals(GitUtils.minigitDir)) return null;
+        if (file.getName().equals(".minigit")) return null;
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 TreeEntry.EntryType entryType = child.isDirectory() ? TreeEntry.EntryType.tree : TreeEntry.EntryType.blob;
-                hash = writeTree(child, commitTreeMap);
+                hash = writeTree(child, commitTreeMap, repoPath);
                 // 这条语句有些多余，因为应该不存在hash为null的treeEntry
                 if(hash != null){
                     treeEntries.add(new TreeEntry(child.getAbsolutePath(), hash, entryType));
@@ -185,7 +191,7 @@ public class CommitUtils {
                 return null;
             }
             hash = calculateDirSha1(treeEntries, file.getAbsolutePath());
-            writeObject(treeEntries, file.getAbsolutePath());
+            writeObject(treeEntries, file.getAbsolutePath(), repoPath);
         } else{
             hash = commitTreeMap.get(file.getAbsolutePath());
         }
@@ -193,7 +199,7 @@ public class CommitUtils {
         return hash;
     }
 
-    public static void writeObject(List<TreeEntry> treeEntries, String dirPath){
+    public void writeObject(List<TreeEntry> treeEntries, String dirPath, String repoPath){
         if(treeEntries.size() == 0){
             // 这个判断有一点多余，因为暂时只有writeTree中调用了这个方法，而writeTree中已经有了此情况的处理
             return ;
@@ -210,7 +216,7 @@ public class CommitUtils {
                 // 也就是有目录下的文件生成上一个目录的hash
                 if(treeEntry.getEntryType() == TreeEntry.EntryType.blob){
                     try {
-                        File file = FileUtils.createObjectFile(treeEntry.getHash());
+                        File file = FileUtils.createObjectFile(treeEntry.getHash(), repoPath);
                         // file == null，代表objectFile已经存在，即文件未发生改变，也就不用写
                         if(file != null){
                             String content = FileUtils.readFile(treeEntry.getPath());
@@ -224,7 +230,7 @@ public class CommitUtils {
         }
         // 计算tree文件的哈希值，写入objects
         String dirHash = calculateDirSha1(treeEntries, dirPath);
-        File dirFile = FileUtils.createObjectFile(dirHash);
+        File dirFile = FileUtils.createObjectFile(dirHash, repoPath);
         try {
             if(dirFile != null) {
                 dirFile.createNewFile();

@@ -3,25 +3,25 @@ package com.minigit.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.minigit.common.R;
 import com.minigit.entity.Branch;
-import com.minigit.entity.Commit;
 import com.minigit.entity.Repo;
 import com.minigit.entity.User;
 import com.minigit.entityService.BranchService;
 import com.minigit.entityService.RepoService;
 import com.minigit.entityService.UserService;
+import com.minigit.service.GitService;
 import com.minigit.util.FileUtils;
-import com.minigit.util.GitUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/{user}")
+@RequestMapping("/{userName}")
 public class RepoController {
     @Autowired
     private RepoService repoService;
@@ -29,6 +29,9 @@ public class RepoController {
     private UserService userService;
     @Autowired
     private BranchService branchService;
+
+    @Autowired
+    private GitService gitService;
     /**
      *
      * @param repo
@@ -40,9 +43,8 @@ public class RepoController {
         String path = repo.getPath();
         String repoName = repo.getName();
         boolean isPublic = repo.getIsPublic();
-        GitUtils.init(path);
         Long authorId = (Long) session.getAttribute("user");
-        repo.setAuthorId(authorId);
+        gitService.init(path, authorId, repo);
         repoService.save(repo);
 
         Branch branch = new Branch();
@@ -77,7 +79,7 @@ public class RepoController {
         repoService.remove(queryWrapper);
 
         try {
-            FileUtils.deleteFileOrDirectory(repo1.getPath());
+            FileUtils.deleteFileOrDirectory(repo1.getPath() + File.separator + ".minigit");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

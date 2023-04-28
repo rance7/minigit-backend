@@ -1,24 +1,22 @@
-package com.minigit.util;
+package com.minigit.service;
 
+import com.minigit.util.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-
-/**
- * 对于回退，我们的做法是读取当前commitTree和要回退的版本的commitTree，删除当前commitTree的文件，
- * 创建要回退的版本的commitTree的文件
- */
-
-public class BackUtils {
-
-    public static Map<String, String> getCurrentCommitTree(){
-        String currentCommitHash = FileUtils.getCurrentCommitHash();
-        String oldTreeHeadHash = FileUtils.getTreeHeadHash(currentCommitHash);
+@Service
+public class BackService {
+    @Autowired
+    private CommitUtilService commitUtilService;
+    public Map<String, String> getCurrentCommitTree(String repoPath){
+        String currentCommitHash = FileUtils.getCurrentCommitHash(repoPath);
+        String oldTreeHeadHash = FileUtils.getTreeHeadHash(currentCommitHash, repoPath);
         Map<String, String> currentCommitTreeMap = new HashMap<>();
-        CommitUtils.createOldCommitTree(oldTreeHeadHash,currentCommitTreeMap);
+        commitUtilService.createOldCommitTree(oldTreeHeadHash,currentCommitTreeMap, repoPath);
         if(currentCommitTreeMap.size() == 0){
             System.out.println("当前分支还没有提交！！");
             return null;
@@ -26,10 +24,10 @@ public class BackUtils {
         return currentCommitTreeMap;
     }
 
-    public static Map<String, String> getOldCommitTree(String oldCommitHash){
-        String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash);
+    public Map<String, String> getOldCommitTree(String oldCommitHash, String repoPath){
+        String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash, repoPath);
         Map<String, String> oldCommitTreeMap = new HashMap<>();
-        CommitUtils.createOldCommitTree(oldTreeHeadHash,oldCommitTreeMap);
+        commitUtilService.createOldCommitTree(oldTreeHeadHash,oldCommitTreeMap, repoPath);
         if(oldCommitTreeMap.size() == 0){
             System.out.println("该历史提交不存在！！");
             return null;
@@ -38,7 +36,7 @@ public class BackUtils {
     }
 
 
-    public static Map<String,String> getDeleteMap(Map<String, String> currentCommitTreeMap,
+    public Map<String,String> getDeleteMap(Map<String, String> currentCommitTreeMap,
                                                   Map<String, String> oldCommitTreeMap){
         Map<String, String> deleteMap = new HashMap<>();
         for (String path : currentCommitTreeMap.keySet()) {
@@ -50,7 +48,7 @@ public class BackUtils {
         return deleteMap;
     }
 
-    public static Map<String,String> getCreateMap(Map<String, String> currentCommitTreeMap,
+    public Map<String,String> getCreateMap(Map<String, String> currentCommitTreeMap,
                                                   Map<String, String> oldCommitTreeMap){
         Map<String, String> createMap = new HashMap<>();
         for (String path : oldCommitTreeMap.keySet()) {
@@ -62,9 +60,9 @@ public class BackUtils {
         return createMap;
     }
 
-    public static Map<String, String> getFileMap(){
+    public Map<String, String> getFileMap(String repoPath){
         Map<String, String> fileMap = new HashMap<>();
-        CommitUtils.createFileTree(fileMap, new File(GitUtils.originDir));
+        commitUtilService.createFileTree(fileMap, new File(repoPath));
         return fileMap;
     }
 }

@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/{user}/{repo}/")
+@RequestMapping("/{userName}/{repoName}/")
 public class BranchController {
     @Autowired
     private BranchService branchService;
@@ -26,14 +26,9 @@ public class BranchController {
     @Autowired
     private RepoService repoService;
 
-    /**
-     * @param user
-     * @param repo
-     * @param session
-     * @return
-     */
+
     @PostMapping("/add")
-    public R<Branch> addBranch(@PathVariable String user, @PathVariable String repo,@RequestParam String branchName,
+    public R<Branch> addBranch(@PathVariable String userName, @PathVariable String repoName,@RequestParam String branchName,
                                @RequestBody Branch sourceBranch, HttpSession session){
         Long authorId = (Long) session.getAttribute("user");
         Long repoId = sourceBranch.getRepoId();
@@ -49,10 +44,10 @@ public class BranchController {
     }
 
     @GetMapping("/branches")
-    public R<List<Branch>> getAllBranches(@PathVariable String user, @PathVariable String repo,HttpSession session){
+    public R<List<Branch>> getAllBranches(@PathVariable String userName, @PathVariable String repoName,HttpSession session){
         Long authorId = (Long) session.getAttribute("user");
         LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repo);
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
         Repo repo1 = repoService.getOne(queryWrapper);
 
         LambdaQueryWrapper<Branch> queryWrapper1 = new LambdaQueryWrapper<>();
