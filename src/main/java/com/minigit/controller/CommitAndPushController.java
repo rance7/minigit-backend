@@ -1,6 +1,7 @@
 package com.minigit.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.jcraft.jsch.SftpException;
 import com.minigit.common.R;
 import com.minigit.entity.Branch;
 import com.minigit.entity.Commit;
@@ -107,5 +108,13 @@ public class CommitAndPushController {
         return R.success("推送成功！");
     }
 
+    @PostMapping("/pull")
+    public R<String> pull(@PathVariable String userName,@PathVariable String repoName,
+                          @PathVariable String branchName, @RequestBody Repo repo, HttpSession session) throws SftpException {
+        // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
+
+        gitService.pull(userName + "/" + repoName + "/" + branchName, repo.getPath());
+        return R.success("拉取成功！");
+    }
 
 }

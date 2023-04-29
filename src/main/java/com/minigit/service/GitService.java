@@ -1,6 +1,8 @@
 package com.minigit.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.SftpException;
 import com.minigit.entity.Commit;
 import com.minigit.entity.Repo;
 import com.minigit.entityService.RepoService;
@@ -166,8 +168,10 @@ public class GitService {
     }
 
     public void push(String repoPath,  String userName, String repoName, String branchName){
-
         uploadService.uploadFile(repoPath, userName, repoName, branchName);
+    }
 
+    public void pull(String path, String repoPath) throws SftpException {
+        uploadService.downloadDirectory(path, repoPath);
     }
 }

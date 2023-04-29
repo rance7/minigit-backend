@@ -1,15 +1,16 @@
 package com.minigit.service;
 
 import com.jcraft.jsch.*;
-import com.minigit.common.R;
 import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -130,7 +131,9 @@ public class UploadService {
 
     public void uploadCommitFile(ChannelSftp sftp, String hash, String repoPath, String branchPath) throws SftpException, IOException {
         File file = FileUtils.getObjectFile(hash, repoPath);
+        System.out.println(file.getAbsolutePath());
         String content = FileUtils.readFile(file.getAbsolutePath());
+        System.out.println(content);
         String[] lines = content.split("\n?\r");
         for (String line : lines) {
             if(line.equals("")) return;
@@ -204,5 +207,62 @@ public class UploadService {
         sftp.rmdir(dirPath);
         return true;
     }
+
+    public void downloadDirectory(String path, String localPath) throws SftpException {
+        //建立连接
+        if (channelSftp == null || !channelSftp.isConnected()) {
+            channelSftp=createSFTPClient();
+        }
+
+        String remotePath = REMOTE_REPO_PATH + "/" + path;
+        // 递归下载目录下的所有文件
+        Vector<ChannelSftp.LsEntry> fileList = channelSftp.ls(remotePath);
+        File localFile = new File(localPath);
+        if (!localFile.exists()) {
+            localFile.mkdirs();
+        }
+        for (ChannelSftp.LsEntry entry : fileList) {
+            String entryName = entry.getFilename();
+            if (!entryName.equals(".") && !entryName.equals("..")) {
+                String remoteFilePath = path + "/" + entryName;
+                String localFilePath = localPath + "/" + entryName;
+
+                if (entry.getAttrs().isDir()) {
+                    downloadDirectory(remoteFilePath, localFilePath);
+                } else {
+                    channelSftp.get(REMOTE_REPO_PATH +"/" +  remoteFilePath, localFilePath);
+                }
+            }
+        }
+
+    }
+
+
+    public String readFile(String remoteFilePath) throws SftpException {
+        //建立连接
+        if (channelSftp == null || !channelSftp.isConnected()) {
+            channelSftp=createSFTPClient();
+        }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        channelSftp.get(remoteFilePath, outputStream);
+        return outputStream.toString();
+    }
+
+    public Map<String, String> readDir(String remoteDirPath) throws SftpException {
+        //建立连接
+        if (channelSftp == null || !channelSftp.isConnected()) {
+            channelSftp=createSFTPClient();
+        }
+        Map<String,String> map = new HashMap<>();
+        Vector<ChannelSftp.LsEntry> fileEntries = channelSftp.ls(remoteDirPath);
+        for (ChannelSftp.LsEntry fileEntry : fileEntries) {
+            String fileName = fileEntry.getFilename();
+            if (!fileName.equals(".") && !fileName.equals("..")){
+                map.put(fileName, fileEntry.getAttrs().isDir() ? "tree" : "blob");
+            }
+        }
+        return map;
+    }
+
 
 }

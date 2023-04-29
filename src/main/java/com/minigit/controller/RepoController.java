@@ -52,15 +52,15 @@ public class RepoController {
         branch.setRepoId(repo.getId());
         branch.setAuthorId(authorId);
         // 还没有提交，commitHash为null
-        branch.setHeadHash(null);
+        branch.setCommitHash(null);
         branchService.save(branch);
         return R.success(repo);
     }
 
     @GetMapping("/repos")
-    public R<List<Repo>> getAllRepo(@PathVariable String user, HttpSession session){
+    public R<List<Repo>> getAllRepo(@PathVariable String userName, HttpSession session){
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getAccountName, user);
+        queryWrapper.eq(User::getAccountName, userName);
         User user0 = userService.getOne(queryWrapper);
         Long id = user0.getId();
 

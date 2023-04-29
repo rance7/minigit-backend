@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/{userName}/{repoName}/")
+@RequestMapping("/{userName}/{repoName}")
 public class BranchController {
     @Autowired
     private BranchService branchService;
@@ -38,7 +38,7 @@ public class BranchController {
         branch.setName(branchName);
         branch.setRepoId(sourceBranch.getRepoId());
         branch.setAuthorId(authorId);
-        branch.setHeadHash(sourceBranch.getHeadHash());
+        branch.setCommitHash(sourceBranch.getCommitHash());
         branchService.save(branch);
         return R.success(branch);
     }
