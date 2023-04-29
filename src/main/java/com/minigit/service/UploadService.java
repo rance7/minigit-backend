@@ -1,53 +1,43 @@
-package com.minigit.util;
+package com.minigit.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.jcraft.jsch.*;
+import com.minigit.common.R;
+import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.Vector;
 
-/**
- * @Description TODO
- * @Version 1.0
- */
-
 @Slf4j
-@Component
-@ConfigurationProperties(prefix = "ftp")
-public class UploadUtils {
-    private static Session session;
-    private static ChannelSftp channelSftp;
+@Service
+public class UploadService {
+    private Session session;
+    private ChannelSftp channelSftp;
     @Value("${ftp.address}")
-    private static String ftpAddress;
+    private String ftpAddress;
     @Value("${ftp.username}")
-    private static String ftpUserName;
+    private String ftpUserName;
     @Value("${ftp.password}")
-    private static String ftpPassword;
+    private String ftpPassword;
     @Value("${ftp.port}")
-    private static int ftpPort;
+    private int ftpPort;
     @Value("${remote-repo-path}")
-    public static String REMOTE_REPO_PATH;
+    public String REMOTE_REPO_PATH;
 
-    public static ChannelSftp getSFTPClient(){
+    public ChannelSftp getSFTPClient(){
         return channelSftp;
     }
 
     /**
      * 获取sftp连接
      */
-    public static ChannelSftp createSFTPClient() {
-        System.out.println(ftpAddress);
-        System.out.println(ftpPort);
-        System.out.println(ftpPassword);
-        System.out.println(ftpUserName);
-        System.out.println(REMOTE_REPO_PATH);
+    public ChannelSftp createSFTPClient() {
+
         //开始时间  用于计时
         long startTime = System.currentTimeMillis();
         JSch jsch = new JSch();// 创建JSch对象
@@ -81,7 +71,7 @@ public class UploadUtils {
      * @Description //关闭链接资源
      * @return void
      **/
-    public static void close() {
+    public void close() {
         if (channelSftp != null && channelSftp.isConnected()) {
             channelSftp.disconnect();
         }
@@ -95,16 +85,16 @@ public class UploadUtils {
      * @Description //上传文件
      * @return boolean
      **/
-    public static boolean uploadFile(String repoPath, String userName, String repoName, String branchName){
+    public boolean uploadFile(String repoPath, String userName, String repoName, String branchName){
         try{
             //建立连接
             if (channelSftp == null || !channelSftp.isConnected()) {
                 channelSftp=createSFTPClient();
             }
-            String branchPath = REMOTE_REPO_PATH +File.separator + userName + File.separator + repoName +
-                    File.separator + branchName;
-            deleteDirectory(branchPath, channelSftp);
-            channelSftp.mkdir(branchPath);
+            String branchPath = REMOTE_REPO_PATH + "/"+ userName + "/" + repoName +
+                    "/" + branchName;
+            deleteDirectory(REMOTE_REPO_PATH, channelSftp);
+            createDir(branchPath,channelSftp);
             String commitHash = FileUtils.getCurrentCommitHash(repoPath);
             String treeHeadHash = FileUtils.getTreeHeadHash(commitHash,repoPath);
             uploadCommitFile(channelSftp, treeHeadHash, repoPath, branchPath);
@@ -115,21 +105,56 @@ public class UploadUtils {
         return false;
     }
 
-    public static void uploadCommitFile(ChannelSftp sftp, String hash, String repoPath, String branchPath) throws SftpException, IOException {
+    /**
+     * 在远程服务器上递归创建目录
+     * @param dirPath 目录路径，格式为"dir1/dir2/dir3"
+     * @param sftp    SFTP客户端
+     */
+    public void createDir(String dirPath, ChannelSftp sftp) throws SftpException {
+        String[] dirs = dirPath.split("/");
+        String currentDir = "";
+        for (String dir : dirs) {
+            if (dir.isEmpty()) {
+                continue;
+            }
+            currentDir += "/" + dir;
+            try {
+                sftp.cd(currentDir);
+            } catch (SftpException e) {
+                sftp.mkdir(currentDir);
+                sftp.cd(currentDir);
+            }
+        }
+    }
+
+
+    public void uploadCommitFile(ChannelSftp sftp, String hash, String repoPath, String branchPath) throws SftpException, IOException {
         File file = FileUtils.getObjectFile(hash, repoPath);
         String content = FileUtils.readFile(file.getAbsolutePath());
         String[] lines = content.split("\n?\r");
         for (String line : lines) {
+            if(line.equals("")) return;
             String[] s = line.split("\t");
             if(s[0].equals("blob")){
-                System.out.println(branchPath + s[1].replaceFirst(repoPath, ""));
-                channelSftp.put(file.getAbsolutePath(), branchPath + s[1].replaceFirst(repoPath, ""));
+                channelSftp.put(file.getAbsolutePath(), branchPath + s[1].replaceFirst(repoPath
+                                .replace("\\", "\\\\"),"")
+                                .replaceAll("\\\\","/"));
             }else{
-                channelSftp.mkdir(branchPath + s[1].replaceFirst(repoPath, ""));
+                channelSftp.mkdir(branchPath + s[1].replaceFirst(repoPath.replace("\\", "\\\\")
+                                ,"").replaceAll("\\\\","/"));
                 uploadCommitFile(sftp, s[2], repoPath, branchPath);
             }
         }
     }
+
+    public void checkRemoteDirectory(String remoteDir, ChannelSftp channelSftp) throws SftpException {
+        try {
+            channelSftp.cd(remoteDir);
+        } catch (SftpException e) {
+            channelSftp.mkdir(remoteDir);
+        }
+    }
+
 
     /**
      * 上传一个文件或者整个目录
@@ -138,7 +163,7 @@ public class UploadUtils {
      * @param remotePath
      * @throws Exception
      */
-    public static void uploadFile(ChannelSftp sftp, String localPath, String remotePath) throws Exception {
+    public void uploadFile(ChannelSftp sftp, String localPath, String remotePath) throws Exception {
         File localFile = new File(localPath);
         if (localFile.isFile()) {
             sftp.put(localPath, remotePath);
@@ -157,7 +182,12 @@ public class UploadUtils {
     }
 
 
-    public static boolean deleteDirectory(String dirPath, ChannelSftp sftp) throws SftpException {
+    public boolean deleteDirectory(String dirPath, ChannelSftp sftp) throws SftpException {
+        try{
+            sftp.stat(dirPath);
+        }catch (Exception e){
+            return false;
+        }
         Vector<ChannelSftp.LsEntry> fileList = sftp.ls(dirPath);
         for (ChannelSftp.LsEntry entry : fileList) {
             String fileName = entry.getFilename();
@@ -176,4 +206,3 @@ public class UploadUtils {
     }
 
 }
-

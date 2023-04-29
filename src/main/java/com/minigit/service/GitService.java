@@ -1,22 +1,17 @@
 package com.minigit.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.minigit.common.R;
 import com.minigit.entity.Commit;
 import com.minigit.entity.Repo;
 import com.minigit.entityService.RepoService;
 import com.minigit.util.FileUtils;
 import com.minigit.util.Sha1Utils;
-import com.minigit.util.UploadUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLOutput;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +26,8 @@ public class GitService {
     private CommitUtilService commitUtilService;
     @Autowired
     private BackService backService;
+    @Autowired
+    private UploadService uploadService;
 
     public Repo init(String path, Long authorId, Repo repo) {
         LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
@@ -160,7 +157,7 @@ public class GitService {
         try {
             String headPath = repoPath + File.separator + ".minigit" + File.separator + "HEAD";
                     FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "refs"
-                    + File.separator + "heads" + FileUtils.readLine(headPath), oldCommitHash);
+                    + File.separator + "heads" +File.separator + FileUtils.readLine(headPath), oldCommitHash);
             // 删除缓冲区的内容
             FileUtils.deleteFileOrDirectory(repoPath + File.separator + ".minigit" + File.separator + "INDEX");
         } catch (IOException e) {
@@ -168,16 +165,9 @@ public class GitService {
         }
     }
 
-    public void push(List<Commit> commitHashes, String repoPath){
-        for(int i = 0; i < commitHashes.size(); i++){
-            String commitHash = commitHashes.get(i).getHash();
-            String treeHeadHash = FileUtils.getTreeHeadHash(commitHash,repoPath);
-            File file = FileUtils.getObjectFile(treeHeadHash,repoPath);
-            try {
-                UploadUtils.uploadFile(new FileInputStream(file), commitHash);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    public void push(String repoPath,  String userName, String repoName, String branchName){
+
+        uploadService.uploadFile(repoPath, userName, repoName, branchName);
+
     }
 }

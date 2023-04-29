@@ -97,25 +97,13 @@ public class CommitAndPushController {
         return R.success("回退成功！");
     }
     @GetMapping("/push")
-    public R<String> push(@PathVariable String repoName,@PathVariable String branchName, HttpSession session){
+    public R<String> push(@PathVariable String userName,@PathVariable String repoName,
+                          @PathVariable String branchName, HttpSession session){
+        LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
         Long authorId = (Long) session.getAttribute("user");
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getId, authorId);
-        User user = userService.getOne(queryWrapper);
-
-        LambdaQueryWrapper<Repo> queryWrapper1 = new LambdaQueryWrapper<>();
-        queryWrapper1.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
-        Repo repo1 = repoService.getOne(queryWrapper1);
-
-        LambdaQueryWrapper<Branch> queryWrapper2 = new LambdaQueryWrapper<>();
-        queryWrapper2.eq(Branch::getRepoId,repo1.getId()).eq(Branch::getName, branchName);
-        Branch branch1 = branchService.getOne(queryWrapper2);
-
-        LambdaQueryWrapper<Commit> queryWrapper3 = new LambdaQueryWrapper<>();
-        queryWrapper3.eq(Commit::getBranchId,branch1.getId());
-        List<Commit> list = commitService.list(queryWrapper3);
-
-        gitService.push(list,repo1.getPath());
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName,repoName);
+        Repo repo = repoService.getOne(queryWrapper);
+        gitService.push(repo.getPath(), userName, repoName, branchName);
         return R.success("推送成功！");
     }
 
