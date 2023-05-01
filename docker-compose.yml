@@ -1,0 +1,29 @@
+on: "3.9"
+services:
+  minigit:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/minigit?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+    networks:
+      - mynetwork
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: minigit
+      MYSQL_ROOT_PASSWORD: 123456
+      TZ: Asia/Shanghai
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+
