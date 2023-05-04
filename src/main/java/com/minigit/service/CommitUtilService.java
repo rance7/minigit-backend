@@ -51,7 +51,7 @@ public class CommitUtilService {
                 System.out.println("目标文件类型或内容错误！" + content);
                 return;
             }
-            String[] lines = content.split("\r?\n");
+            String[] lines = content.split(System.lineSeparator());
             for (String line : lines) {
                 String[] s = line.split("\t");
                 if(s[0].equals("blob")) {
@@ -107,7 +107,7 @@ public class CommitUtilService {
                 System.out.println("INDEX文件为空或者INDEX文件不存在！");
                 return;
             }
-            String[] lines = content.split("\r?\n");
+            String[] lines = content.split(System.lineSeparator());
             for (String line : lines) {
                 String[] s = line.split("\t");
                 indexMap.put(s[0],s[1]);

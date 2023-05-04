@@ -67,7 +67,7 @@ public  class FileUtils {
         String line = reader.readLine();
         reader.close();
         if (line != null) {
-            line = line.replaceAll("\n?\r", "");
+            line = line.replace(File.separator, "");
         }
         return line;
     }

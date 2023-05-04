@@ -132,18 +132,18 @@ public class UploadService {
     public void uploadCommitFile(ChannelSftp sftp, String hash, String repoPath, String branchPath) throws SftpException, IOException {
         File file = FileUtils.getObjectFile(hash, repoPath);
         String content = FileUtils.readFile(file.getAbsolutePath());
-        String[] lines = content.split("\n?\r");
+        String[] lines = content.split(System.lineSeparator());
         for (String line : lines) {
-            if(line.equals("")) return;
+            if(line.equals("")) continue;
             String[] s = line.split("\t");
-            System.out.println(line);
             if(s[0].equals("blob")){
-                channelSftp.put(s[1], branchPath + s[1].replaceFirst(repoPath
-                                .replace("\\", "\\\\"),"")
-                                .replaceAll("\\\\","/"));
+                channelSftp.put(s[1], branchPath + "/" +
+                        s[1].replace(repoPath + File.separator, "")
+                        .replace(File.separator, "/"));
             }else{
-                channelSftp.mkdir(branchPath + s[1].replaceFirst(repoPath.replace("\\", "\\\\")
-                                ,"").replaceAll("\\\\","/"));
+                channelSftp.mkdir(branchPath + "/" +
+                        s[1].replace(repoPath + File.separator, "")
+                                .replace(File.separator, "/"));
                 uploadCommitFile(sftp, s[2], repoPath, branchPath);
             }
         }
