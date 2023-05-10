@@ -75,7 +75,7 @@ public class CommitUtilService {
      */
     public void createFileTree(Map<String, String> fileMap, File file){
         // 忽略掉.minigit目录
-        if(file.getName() == ".minigit"){
+        if(file.getName().equals(".minigit")){
             return;
         }
         if(file.isDirectory()){
@@ -95,7 +95,7 @@ public class CommitUtilService {
      * 创建indexTree，这是一个map，保存了所有缓存文件的路径和哈希值
      * @param indexMap
      */
-    public static void createIndexTree(Map<String, String> indexMap, String repoPath){
+    public void createIndexTree(Map<String, String> indexMap, String repoPath){
         File file = new File(repoPath + File.separator + ".minigit" + File.separator + "INDEX");
         try {
             if(!file.exists()){
@@ -118,9 +118,6 @@ public class CommitUtilService {
         }
     }
 
-    public static void getFileStatus(){
-
-    }
 
     /**
      * 根据旧的commitTree、fileMap和indexMap得到新的提交树
@@ -210,7 +207,7 @@ public class CommitUtilService {
             // 因为未被追踪的文件的hash为null
             if(treeEntry.getHash() != null){
                 sb.append(treeEntry.getEntryType() + "\t").append(treeEntry.getPath() + "\t").
-                        append(treeEntry.getHash() + "\n");
+                        append(treeEntry.getHash() + System.lineSeparator());
                 // 对于每个blob文件，写入object并将type、path和hash写入sb
                 // 对每个tree文件，仅将type、path和hash写入sb，而将tree文件写入object的操作是根据每个目录下的所有文件完成的/
                 // 也就是有目录下的文件生成上一个目录的hash
@@ -220,6 +217,7 @@ public class CommitUtilService {
                         // file == null，代表objectFile已经存在，即文件未发生改变，也就不用写
                         if(file != null){
                             String content = FileUtils.readFile(treeEntry.getPath());
+                            System.out.println(content);
                             FileUtils.writeFile(file.getAbsolutePath(), content);
                         }
                     } catch (IOException e) {

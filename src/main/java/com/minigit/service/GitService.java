@@ -1,10 +1,11 @@
 package com.minigit.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.SftpException;
+import com.minigit.entity.Branch;
 import com.minigit.entity.Commit;
 import com.minigit.entity.Repo;
+import com.minigit.entityService.BranchService;
 import com.minigit.entityService.RepoService;
 import com.minigit.util.FileUtils;
 import com.minigit.util.Sha1Utils;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ public class GitService {
     private BackService backService;
     @Autowired
     private UploadService uploadService;
+    @Autowired
+    private BranchService branchService;
 
     public Repo init(String path, Long authorId, Repo repo) {
         LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
@@ -97,9 +101,9 @@ public class GitService {
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间
-        String data = sb.append(newTreeHeadHash + "\n")
-                .append(committer + "\t" + "2020-4-18 00:00:00 \n")
-                .append(oldCommitHash + "\n")
+        String data = sb.append(newTreeHeadHash + System.lineSeparator())
+                .append(committer + "\t" + "2020-4-18 00:00:00" + System.lineSeparator())
+                .append(oldCommitHash + System.lineSeparator())
                 .append(message).toString();
         String commitHash = commitUtilService.calculateCommitHash(data);
         commit.setParentHash(oldCommitHash);
@@ -173,5 +177,55 @@ public class GitService {
 
     public void pull(String path, String repoPath) throws SftpException {
         uploadService.downloadDirectory(path, repoPath);
+    }
+
+    /**
+     * Integer: 0:未追踪  1:已缓存  2:未修改  3:已修改  4:已删除
+     * @param repoPath
+     * @param oldCommitHash
+     * @return
+     */
+    public Map<String, Integer> getFileStatus(String repoPath, String oldCommitHash){
+
+        String oldTreeHeadHash = FileUtils.getTreeHeadHash(oldCommitHash,repoPath);
+        Map<String, String> fileMap = new HashMap<>();
+        Map<String, String> indexMap = new HashMap<>();
+        Map<String, String> commitTreeMap = new HashMap<>();
+        commitUtilService.createIndexTree(indexMap,repoPath);
+        commitUtilService.createOldCommitTree(oldTreeHeadHash, commitTreeMap,repoPath);
+        commitUtilService.createFileTree(fileMap,new File(repoPath));
+        Map<String, Integer> resultMap = new HashMap<>();
+
+        // 如果commitTreeMap为null，说明没有提交，先将所有的文件标记为未追踪
+        for (String filePath : fileMap.keySet()) {
+            resultMap.put(filePath.replace(repoPath + File.separator, ""), 0);
+        }
+        // 然后将index中的文件标记为已缓存即可
+        for (String filePath : indexMap.keySet()) {
+            resultMap.put(filePath.replace(repoPath + File.separator, ""), 1);
+        }
+        if(commitTreeMap == null){
+            return resultMap;
+        }
+
+        // 对每个缓冲区的文件和commitTree中的文件做比较
+        for (String filePath : commitTreeMap.keySet()) {
+            String oldHash = commitTreeMap.get(filePath);
+            File file = new File(filePath);
+            if(!file.exists()){
+                // 文件已经删除，标记为4
+                resultMap.put(filePath.replace(repoPath + File.separator, ""), 4);
+                continue;
+            }
+            String newHash = calculateFileSha1(file);
+            if(oldHash.equals(newHash)){
+                // 文件未修改，标记为2
+                resultMap.put(filePath.replace(repoPath + File.separator, ""), 2);
+            }else{
+                // 文件已经修改，标记为3
+                resultMap.put(filePath.replace(repoPath + File.separator, ""), 3);
+            }
+        }
+        return resultMap;
     }
 }

@@ -22,4 +22,18 @@ public class UploadTest {
         System.out.println(path2);
     }
 
+    @Test
+    public void contentTest(){
+        String content = "111111111111111111\\r\\n\\r\\n\\r\\n\\r\\n\\r\\n";
+        String[] lines = content.split(System.lineSeparator() + System.lineSeparator());
+        for (String line : lines) {
+            System.out.println(line);
+        }
+        String[] lines2 = content.split("\\\\r?\\\\n");
+        for (String s : lines2) {
+            System.out.println(s);
+        }
+    }
+
+
 }

@@ -14,6 +14,7 @@ import com.minigit.entityService.UserService;
 import com.minigit.service.BackService;
 import com.minigit.service.CommitUtilService;
 import com.minigit.service.GitService;
+import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/{userName}/{repoName}/{branchName}")
+@RequestMapping("/{userName}/{repoName}/do/{branchName}")
 public class CommitAndPushController {
     @Autowired
     private CommitService commitService;
@@ -44,12 +45,22 @@ public class CommitAndPushController {
     @Autowired
     private GitService gitService;
 
+    @GetMapping("/status")
+    public R<Map<String, Integer>> status(@PathVariable String repoName, HttpSession session){
+        LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
+        Long authorId = (Long) session.getAttribute("user");
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName,repoName);
+        Repo repo = repoService.getOne(queryWrapper);
+        String oldCommitHash = FileUtils.getCurrentCommitHash(repo.getPath());
+        Map<String, Integer> fileStatus = gitService.getFileStatus(repo.getPath(), oldCommitHash);
+        return R.success(fileStatus);
+    }
+
     @PostMapping("/add")
     public R<String> add(@PathVariable String repoName,@PathVariable String branchName,
                          @RequestParam List<String> filePaths, HttpSession session){
         List<File> files = new ArrayList<>();
         for (String filePath : filePaths) {
-            System.out.println(filePath);
             files.add(new File(filePath));
         }
         LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
@@ -97,6 +108,7 @@ public class CommitAndPushController {
         gitService.back(commit.getHash(), repo.getPath());
         return R.success("回退成功！");
     }
+
     @GetMapping("/push")
     public R<String> push(@PathVariable String userName,@PathVariable String repoName,
                           @PathVariable String branchName, HttpSession session){

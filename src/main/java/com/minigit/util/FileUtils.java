@@ -28,7 +28,7 @@ public  class FileUtils {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         StringBuilder content = new StringBuilder();
         String line;
-        while ((line = reader.readLine()) != null) {
+        while ((line = reader.readLine()) != null && !line.equals("")) {
             content.append(line);
             content.append(System.lineSeparator());
         }
@@ -44,7 +44,7 @@ public  class FileUtils {
      */
     public static void writeFile(String filePath, String content) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(filePath,true));
-        writer.write(content + "\n");
+        writer.write(content + System.lineSeparator());
         writer.close();
     }
 
