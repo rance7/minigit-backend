@@ -60,13 +60,13 @@ public class CommitAndPushController {
     public R<String> add(@PathVariable String repoName,@PathVariable String branchName,
                          @RequestParam List<String> filePaths, HttpSession session){
         List<File> files = new ArrayList<>();
-        for (String filePath : filePaths) {
-            files.add(new File(filePath));
-        }
         LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
         Long authorId = (Long) session.getAttribute("user");
         queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName,repoName);
         Repo repo = repoService.getOne(queryWrapper);
+        for (String filePath : filePaths) {
+            files.add(new File(repo.getPath() + File.separator + filePath));
+        }
         gitService.add(files, repo.getPath());
         return R.success("add成功！");
     }
