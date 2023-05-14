@@ -44,10 +44,9 @@ public class UploadService {
         JSch jsch = new JSch();// 创建JSch对象
         Channel channel = null;
         try {
-            System.out.println("获取连接！");
             //根据用户名，主机ip，端口获取一个Session对象
             session = jsch.getSession(ftpUserName, ftpAddress, ftpPort);
-            System.out.println(session);
+            jsch.addIdentity("./centos.pem");
             session.setPassword(ftpPassword); // 设置密码
             Properties config = new Properties();
             config.put("StrictHostKeyChecking", "no");

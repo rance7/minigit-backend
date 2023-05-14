@@ -95,9 +95,6 @@ public class GitService {
         commitUtilService.createFileTree(fileMap,new File(repoPath));
         commitUtilService.getNewCommitTree(commitTreeMap, fileMap, indexMap);
         String newTreeHeadHash = commitUtilService.writeTree(new File(repoPath), commitTreeMap, repoPath);
-        System.out.println(indexMap);
-        System.out.println(commitTreeMap);
-        System.out.println(newTreeHeadHash);
         // 将新的提交写入objects文件，并清空index
         StringBuilder sb = new StringBuilder();
         // 这里应该再有一个提交时间
@@ -111,7 +108,6 @@ public class GitService {
         commit.setHash(commitHash);
         commit.setCommitter(committer);
         File file = FileUtils.createObjectFile(commitHash,repoPath);
-        System.out.println(file);
         try {
             FileUtils.writeFile(file.getAbsolutePath(), data);
             // 将refs/head/main中的commitHash替换为最新的hash
@@ -200,10 +196,7 @@ public class GitService {
         for (String filePath : fileMap.keySet()) {
             resultMap.put(filePath.replace(repoPath + File.separator, ""), 0);
         }
-        // 然后将index中的文件标记为已缓存即可
-        for (String filePath : indexMap.keySet()) {
-            resultMap.put(filePath.replace(repoPath + File.separator, ""), 1);
-        }
+
         if(commitTreeMap == null){
             return resultMap;
         }
@@ -225,6 +218,10 @@ public class GitService {
                 // 文件已经修改，标记为3
                 resultMap.put(filePath.replace(repoPath + File.separator, ""), 3);
             }
+        }
+        // 然后将index中的文件标记为已缓存即可
+        for (String filePath : indexMap.keySet()) {
+            resultMap.put(filePath.replace(repoPath + File.separator, ""), 1);
         }
         return resultMap;
     }
