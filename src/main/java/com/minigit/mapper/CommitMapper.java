@@ -10,10 +10,13 @@ import java.util.List;
 
 @Mapper
 public interface CommitMapper extends BaseMapper<Commit> {
-    @Select("select * from user  \n" +
-            "     inner join repo on user.id = repo.author_id  \n" +
-            "     inner join branch on branch.repo_id = repo.id  \n" +
-            "     inner join commit on commit.branch_id = branch.id \n" +
-            "     order by commit.create_time ASC;")
+    @Select("SELECT * FROM commit \n" +
+            "WHERE branch_id = \n" +
+            "   (SELECT id FROM branch \n" +
+            "    WHERE name = #{branchName} AND repo_id = \n" +
+            "        (SELECT id FROM repo \n" +
+            "         WHERE name = #{repoName} AND author_id = \n" +
+            "             (SELECT id FROM user WHERE account_name = #{userName}))) \n" +
+            "                   ORDER BY create_time ASC;\n")
     List<Commit> getAllCommits(String userName, String repoName, String branchName);
 }
