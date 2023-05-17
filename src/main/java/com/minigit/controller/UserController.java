@@ -60,18 +60,18 @@ public class UserController {
     public R<User> login(@RequestBody Map map, HttpSession session){
         log.info(map.toString());
 
-        //获取accountname
-        String accountname = map.get("accountName").toString();
+        // 获取accountName
+        String accountName = map.get("accountName").toString();
 
-        //获取pwd
+        // 获取pwd
         String pwd = map.get("pwd").toString();
 
-        if(accountname == null || pwd == null){
+        if(accountName == null || pwd == null){
             return R.error("accountName或者pwd为null!");
         }
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getAccountName, accountname).eq(User::getPwd, pwd);
+        queryWrapper.eq(User::getAccountName, accountName).eq(User::getPwd, pwd);
         User user = userService.getOne(queryWrapper);
         if(user == null){
             return R.error("用户名或密码不正确！");

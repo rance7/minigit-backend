@@ -1,6 +1,8 @@
 package com.minigit.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.SftpException;
 import com.minigit.common.R;
 import com.minigit.entity.Branch;
 import com.minigit.entity.Repo;
@@ -9,6 +11,7 @@ import com.minigit.entityService.BranchService;
 import com.minigit.entityService.RepoService;
 import com.minigit.entityService.UserService;
 import com.minigit.service.GitService;
+import com.minigit.service.UploadService;
 import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +32,12 @@ public class RepoController {
     private UserService userService;
     @Autowired
     private BranchService branchService;
-
     @Autowired
     private GitService gitService;
+    @Autowired
+    private UploadService uploadService;
+
+
     /**
      *
      * @param repo
@@ -70,17 +76,20 @@ public class RepoController {
         return R.success(list);
     }
 
-    @DeleteMapping("/{repo}")
-    public R<String> deleteRepo(@PathVariable String repo, HttpSession session){
+    @DeleteMapping("/{repoName}")
+    public R<String> deleteRepo(@PathVariable String userName, @PathVariable String repoName, HttpSession session){
         LambdaQueryWrapper<Repo> queryWrapper  = new LambdaQueryWrapper<>();
         Long authorId = (Long) session.getAttribute("user");
-        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repo);
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
         Repo repo1 = repoService.getOne(queryWrapper);
         repoService.remove(queryWrapper);
 
         try {
             FileUtils.deleteFileOrDirectory(repo1.getPath() + File.separator + ".minigit");
+            uploadService.deleteDirectory(uploadService.REMOTE_REPO_PATH + "/" + userName + "/" + repoName, uploadService.getSFTPClient());
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (SftpException e) {
             throw new RuntimeException(e);
         }
         return R.success("删除成功！");
