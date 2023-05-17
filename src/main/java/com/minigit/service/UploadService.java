@@ -93,7 +93,7 @@ public class UploadService {
             }
             String branchPath = REMOTE_REPO_PATH + "/"+ userName + "/" + repoName +
                     "/" + branchName;
-            deleteDirectory(REMOTE_REPO_PATH, channelSftp);
+            deleteDirectory(branchPath, channelSftp);
             createDir(branchPath,channelSftp);
             String commitHash = FileUtils.getCurrentCommitHash(repoPath);
             String treeHeadHash = FileUtils.getTreeHeadHash(commitHash,repoPath);
@@ -262,5 +262,41 @@ public class UploadService {
         return map;
     }
 
+    public void copyDirectory(String repoPath,String sourceDir, String destinationDir) throws Exception {
+        //建立连接
+        if (channelSftp == null || !channelSftp.isConnected()) {
+            channelSftp=createSFTPClient();
+        }
+        this.createDir(destinationDir, channelSftp);
+        channelSftp.cd(sourceDir);
+        Vector<ChannelSftp.LsEntry> fileEntries = channelSftp.ls(".");
+        // 列出源目录中的所有文件和子目录
+        for (ChannelSftp.LsEntry fileEntry : fileEntries) {
+            String entryName = fileEntry.getFilename();
+            if (entryName.equals(".") || entryName.equals("..")) {
+                continue;
+            }
+            String srcFilePath = sourceDir + "/" + entryName;
+            String destFilePath = destinationDir + "/" + entryName;
+            if (fileEntry.getAttrs().isDir()) {
+                // 如果是子目录，则递归复制目录
+                channelSftp.mkdir(destFilePath);
+                copyDirectory(repoPath, srcFilePath, destFilePath);
+            } else {
 
+                // 构造本地临时目录的文件路径
+                String localTempFilePath = repoPath + File.separator + ".minigit" + File.separator + entryName;
+
+                // 下载源文件到本地临时目录
+                channelSftp.get(srcFilePath, localTempFilePath);
+
+                // 上传本地临时目录的文件到目标位置
+                channelSftp.put(localTempFilePath, destFilePath);
+
+                // 删除本地临时目录的文件
+                File localTempFile = new File(localTempFilePath);
+                localTempFile.delete();
+            }
+        }
+    }
 }
