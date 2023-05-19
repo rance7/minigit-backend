@@ -37,28 +37,24 @@ public class RepoController {
     @Autowired
     private UploadService uploadService;
 
-
     /**
-     *
      * @param repo
      * @param session
      * @return
      */
     @PostMapping("/init")
-    public R<Repo> init(@RequestBody Repo repo, HttpSession session){
+    public R<Repo> init(@PathVariable String userName, @RequestBody Repo repo, HttpSession session) throws SftpException {
         String path = repo.getPath();
-        String repoName = repo.getName();
-        boolean isPublic = repo.getIsPublic();
         Long authorId = (Long) session.getAttribute("user");
         gitService.init(path, authorId, repo);
-        repoService.save(repo);
-
+        uploadService.createDir(uploadService.REMOTE_REPO_PATH + "/" + userName + "/" + repo.getName());
         Branch branch = new Branch();
         branch.setName("main");
         branch.setRepoId(repo.getId());
         branch.setAuthorId(authorId);
         // 还没有提交，commitHash为null
         branch.setCommitHash(null);
+        repoService.save(repo);
         branchService.save(branch);
         return R.success(repo);
     }

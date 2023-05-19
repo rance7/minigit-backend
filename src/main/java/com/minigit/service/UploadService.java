@@ -94,7 +94,7 @@ public class UploadService {
             String branchPath = REMOTE_REPO_PATH + "/"+ userName + "/" + repoName +
                     "/" + branchName;
             deleteDirectory(branchPath, channelSftp);
-            createDir(branchPath,channelSftp);
+            createDir(branchPath);
             String commitHash = FileUtils.getCurrentCommitHash(repoPath);
             String treeHeadHash = FileUtils.getTreeHeadHash(commitHash,repoPath);
             uploadCommitFile(channelSftp, treeHeadHash, repoPath, branchPath);
@@ -108,9 +108,11 @@ public class UploadService {
     /**
      * 在远程服务器上递归创建目录
      * @param dirPath 目录路径，格式为"dir1/dir2/dir3"
-     * @param sftp    SFTP客户端
      */
-    public void createDir(String dirPath, ChannelSftp sftp) throws SftpException {
+    public void createDir(String dirPath) throws SftpException {
+        if (channelSftp == null || !channelSftp.isConnected()) {
+            channelSftp=createSFTPClient();
+        }
         String[] dirs = dirPath.split("/");
         String currentDir = "";
         for (String dir : dirs) {
@@ -119,10 +121,10 @@ public class UploadService {
             }
             currentDir += "/" + dir;
             try {
-                sftp.cd(currentDir);
+                channelSftp.cd(currentDir);
             } catch (SftpException e) {
-                sftp.mkdir(currentDir);
-                sftp.cd(currentDir);
+                channelSftp.mkdir(currentDir);
+                channelSftp.cd(currentDir);
             }
         }
     }
@@ -267,7 +269,7 @@ public class UploadService {
         if (channelSftp == null || !channelSftp.isConnected()) {
             channelSftp=createSFTPClient();
         }
-        this.createDir(destinationDir, channelSftp);
+        this.createDir(destinationDir);
         channelSftp.cd(sourceDir);
         Vector<ChannelSftp.LsEntry> fileEntries = channelSftp.ls(".");
         // 列出源目录中的所有文件和子目录
