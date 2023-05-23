@@ -50,12 +50,13 @@ public class RepoController {
         uploadService.createDir(uploadService.REMOTE_REPO_PATH + "/" + userName + "/" + repo.getName());
         Branch branch = new Branch();
         branch.setName("main");
+        repoService.save(repo);
         branch.setRepoId(repo.getId());
         branch.setAuthorId(authorId);
         // 还没有提交，commitHash为null
         branch.setCommitHash(null);
-        repoService.save(repo);
         branchService.save(branch);
+        uploadService.createDir(uploadService.REMOTE_REPO_PATH + "/" + userName + "/" + repo.getName() + "/" + branch.getName());
         return R.success(repo);
     }
 
