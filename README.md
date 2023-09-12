@@ -41,5 +41,3 @@ objects数据库中保存着三种文件：
 
 ![image-20230530205442128](markdown-img/README.assets/image-20230530205442128.png)
 
-## 3 实现
-
